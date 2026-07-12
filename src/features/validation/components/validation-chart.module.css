@@ -1,0 +1,56 @@
+.chart {
+  display: block;
+  height: auto;
+  overflow: visible;
+  width: 100%;
+}
+
+.gridLine {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.baseline {
+  fill: none;
+  stroke: #b7becb;
+  stroke-dasharray: 5 5;
+  stroke-width: 1.25;
+}
+
+.area {
+  fill: var(--color-indigo);
+  opacity: 0.08;
+}
+
+.line {
+  fill: none;
+  stroke: var(--color-indigo);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.decisionLine {
+  stroke: #aeb8f0;
+  stroke-dasharray: 4 4;
+  stroke-width: 1.5;
+}
+
+.decisionPoint {
+  fill: var(--color-card);
+  stroke: var(--color-indigo);
+  stroke-width: 3;
+}
+
+.label,
+.axisLabel {
+  fill: var(--color-muted-text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.label {
+  fill: var(--color-indigo);
+  font-size: 10px;
+  font-weight: 500;
+}

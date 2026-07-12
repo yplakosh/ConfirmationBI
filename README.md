@@ -45,6 +45,8 @@ Most people have encountered analytics used to justify a preferred answer rather
 - Supabase Postgres and Auth for persistence and publishing (planned)
 - Vercel deployment
 
+The generation route uses the OpenAI Responses API with a strict Zod-backed structured-output schema. The default model is `gpt-5.6-luna`, selected for this short, cost-sensitive generation task. Without an API key, the application returns deterministic demo data through the same response contract.
+
 ## Local development
 
 Use Node.js 24, then install and run the application:
@@ -56,6 +58,15 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). The current scaffold does not require configured environment variables.
+
+To enable live AI generation, add an OpenAI API key to `.env.local`:
+
+```text
+OPENAI_API_KEY=your_key_here
+OPENAI_MODEL=gpt-5.6-luna
+```
+
+Restart `npm run dev` after changing environment variables. Keep `OPENAI_API_KEY` server-only and never prefix it with `NEXT_PUBLIC_`.
 
 Run the complete local verification suite with:
 
@@ -72,4 +83,4 @@ Application code lives under `src/`:
 
 ## Status
 
-The Next.js project foundation is in place. The next implementation slice is the responsive generator, loading state, and results dashboard before persistence, authentication, and production safeguards.
+The responsive generator, analytical loading state, structured generation route, and results dashboard are implemented. Supabase persistence, authentication, publishing, and production safeguards remain deferred.
