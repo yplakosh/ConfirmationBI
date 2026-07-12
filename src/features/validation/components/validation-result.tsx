@@ -8,6 +8,7 @@ import { Brand } from "@/components/brand/brand";
 import { VALIDATION_STYLE_OPTIONS } from "../validation.constants";
 import type { ValidationResult } from "../validation.types";
 import { ValidationChart } from "./validation-chart";
+import { PublishValidation } from "./publish-validation";
 import styles from "./validation-workspace.module.css";
 
 export type GenerationSource = "openai" | "demo";
@@ -18,6 +19,7 @@ interface ValidationResultViewProps {
   model: string;
   notice?: string;
   sharePath?: string;
+  initialVisibility?: "unlisted" | "public";
   onReset?: () => void;
 }
 
@@ -27,10 +29,12 @@ export function ValidationResultView({
   model,
   notice,
   sharePath,
+  initialVisibility = "unlisted",
   onReset,
 }: ValidationResultViewProps) {
   const [shareMessage, setShareMessage] = useState("");
   const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [visibility, setVisibility] = useState(initialVisibility);
   const styleLabel =
     VALIDATION_STYLE_OPTIONS.find((option) => option.id === result.style)?.label ??
     "Validated";
@@ -84,14 +88,12 @@ export function ValidationResultView({
           <button className={styles.secondaryButton} type="button" onClick={shareResult}>
             Share result
           </button>
-          <button
+          <PublishValidation
             className={styles.primaryButton}
-            type="button"
-            disabled
-            title="Public publishing arrives with Supabase Auth"
-          >
-            Publish coming soon
-          </button>
+            sharePath={sharePath}
+            visibility={visibility}
+            onPublished={() => setVisibility("public")}
+          />
         </div>
       </header>
       <main className={styles.resultsMain}>
@@ -172,15 +174,12 @@ export function ValidationResultView({
         <button className={styles.secondaryButton} type="button" onClick={shareResult}>
           Share
         </button>
-        {onReset ? (
-          <button className={styles.primaryButton} type="button" onClick={onReset}>
-            Run another
-          </button>
-        ) : (
-          <Link className={styles.primaryButton} href="/">
-            Create your own
-          </Link>
-        )}
+        <PublishValidation
+          className={styles.primaryButton}
+          sharePath={sharePath}
+          visibility={visibility}
+          onPublished={() => setVisibility("public")}
+        />
       </div>
     </div>
   );

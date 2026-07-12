@@ -1,0 +1,108 @@
+.dialog {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: 0 24px 80px rgb(16 24 40 / 22%);
+  color: var(--color-ink);
+  max-width: 520px;
+  padding: clamp(var(--space-6), 5vw, var(--space-8));
+  width: calc(100% - 2 * var(--page-gutter));
+}
+
+.dialog::backdrop {
+  background: rgb(24 27 34 / 48%);
+  backdrop-filter: blur(2px);
+}
+
+.close {
+  background: transparent;
+  border: 0;
+  color: var(--color-muted-text);
+  font-size: 1.5rem;
+  min-height: 44px;
+  min-width: 44px;
+  position: absolute;
+  right: var(--space-3);
+  top: var(--space-3);
+}
+
+.content {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.content h2 {
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin: 0;
+  padding-right: var(--space-8);
+}
+
+.content p,
+.status {
+  color: var(--color-subtle-text);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.eyebrow,
+.label {
+  color: var(--color-muted-text);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.input {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-ink);
+  min-height: 46px;
+  padding: 0 var(--space-3);
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+.primary,
+.secondary {
+  border-radius: var(--radius-control);
+  font-weight: 600;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+}
+
+.primary {
+  background: var(--color-indigo);
+  border: 1px solid var(--color-indigo);
+  color: var(--color-card);
+}
+
+.secondary {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-ink);
+}
+
+.primary:disabled {
+  opacity: 0.65;
+}
+
+.error {
+  color: #9a3428 !important;
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 30rem) {
+  .actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+}

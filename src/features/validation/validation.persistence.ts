@@ -101,7 +101,7 @@ export const getValidationByShareId = cache(async (shareId: string) => {
 
   const { data, error } = await supabase
     .from("validations")
-    .select("result, source, model, share_id")
+    .select("result, source, model, share_id, visibility")
     .eq("share_id", shareId)
     .maybeSingle();
 
@@ -125,5 +125,9 @@ export const getValidationByShareId = cache(async (shareId: string) => {
     sharePath: `/v/${data.share_id}`,
   });
 
-  return parsed.success ? parsed.data : null;
+  if (!parsed.success) return null;
+  return {
+    ...parsed.data,
+    visibility: data.visibility === "public" ? "public" : "unlisted",
+  } as const;
 });

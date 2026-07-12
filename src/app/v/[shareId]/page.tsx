@@ -21,9 +21,15 @@ export async function generateMetadata({
   }
 
   return {
-    title: "Unlisted validation report",
+    title:
+      validation.visibility === "public"
+        ? "Published validation report"
+        : "Unlisted validation report",
     description: "A strategically validated decision from ConfirmationBI.",
-    robots: { index: false, follow: false },
+    robots:
+      validation.visibility === "public"
+        ? { index: true, follow: true }
+        : { index: false, follow: false },
   };
 }
 
@@ -46,6 +52,7 @@ export default async function SharedValidationPage({
           : undefined
       }
       sharePath={validation.sharePath}
+      initialVisibility={validation.visibility}
     />
   );
 }
