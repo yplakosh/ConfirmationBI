@@ -1,0 +1,77 @@
+:root {
+  --color-canvas: #f7f8fa;
+  --color-card: #ffffff;
+  --color-ink: #181b22;
+  --color-subtle-text: #5c6472;
+  --color-muted-text: #737d8d;
+  --color-border: #e4e7ec;
+  --color-indigo: #3b4fd8;
+  --color-indigo-hover: #303fbe;
+  --color-indigo-tint: #eef0fc;
+  --color-green: #1e7f5c;
+  --color-green-tint: #e7f4ee;
+  --font-sans: var(--font-plex-sans), sans-serif;
+  --font-mono: var(--font-plex-mono), monospace;
+  --radius-card: 10px;
+  --radius-control: 8px;
+  --shadow-card: 0 2px 8px rgb(16 24 40 / 7%);
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --content-width: 80rem;
+  --page-gutter: clamp(1.25rem, 5vw, 5rem);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-canvas);
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  margin: 0;
+  min-height: 100svh;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+a,
+button,
+input,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid rgb(59 79 216 / 30%);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-indigo-tint);
+  color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

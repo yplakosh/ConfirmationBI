@@ -37,6 +37,39 @@ Most people have encountered analytics used to justify a preferred answer rather
 - [Implementation notes](docs/design/implementation-notes.md) — required privacy, sharing, publishing, accessibility, and interaction behavior
 - [Wireframe brief](docs/wireframe-brief.md) — original product and UX direction
 
+## Technology
+
+- Next.js App Router with React and TypeScript
+- CSS Modules and shared design tokens
+- OpenAI structured output through a server-side route (planned)
+- Supabase Postgres and Auth for persistence and publishing (planned)
+- Vercel deployment
+
+## Local development
+
+Use Node.js 24, then install and run the application:
+
+```bash
+npm ci
+cp .env.example .env.local
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). The current scaffold does not require configured environment variables.
+
+Run the complete local verification suite with:
+
+```bash
+npm run check
+```
+
+Application code lives under `src/`:
+
+- `app/` — routes, layouts, metadata, and global styles
+- `components/` — shared interface components
+- `features/validation/` — validation-specific components, contracts, and constants
+- `lib/` — external service clients and cross-cutting utilities
+
 ## Status
 
-Early concept and project setup. The first implementation will focus on a polished generator experience before adding persistence, authentication, and production safeguards.
+The Next.js project foundation is in place. The next implementation slice is the responsive generator, loading state, and results dashboard before persistence, authentication, and production safeguards.

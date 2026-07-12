@@ -1,0 +1,45 @@
+.brand {
+  align-items: center;
+  color: var(--color-ink);
+  display: inline-flex;
+  font-size: 0.875rem;
+  font-weight: 600;
+  gap: var(--space-2);
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.mark {
+  align-items: flex-end;
+  background: var(--color-indigo);
+  border-radius: 5px;
+  display: inline-flex;
+  gap: 2px;
+  height: 20px;
+  justify-content: center;
+  padding: 4px;
+  width: 20px;
+}
+
+.bar {
+  background: var(--color-card);
+  border-radius: 1px;
+  display: block;
+  width: 3px;
+}
+
+.bar:nth-child(1) {
+  height: 6px;
+}
+
+.bar:nth-child(2) {
+  height: 9px;
+}
+
+.bar:nth-child(3) {
+  height: 12px;
+}
+
+.accent {
+  color: var(--color-indigo);
+}
