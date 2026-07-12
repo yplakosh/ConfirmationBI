@@ -5,13 +5,14 @@ import { getCache, ipAddress } from "@vercel/functions";
 import { GenerateValidationResponseSchema } from "@/features/validation/validation.schema";
 import type {
   GenerateValidationResponse,
+  ValidationPersona,
   ValidationStyle,
 } from "@/features/validation/validation.types";
 
 let generationCache: ReturnType<typeof getCache> | null = null;
 
 function getGenerationCache() {
-  generationCache ??= getCache({ namespace: "confirmationbi-generation-v1" });
+  generationCache ??= getCache({ namespace: "confirmationbi-generation-v2" });
   return generationCache;
 }
 
@@ -204,9 +205,10 @@ function generationCacheKey(
   decision: string,
   style: ValidationStyle,
   model: string,
+  persona: ValidationPersona,
 ) {
   const normalizedDecision = decision.trim().replace(/\s+/g, " ").toLowerCase();
-  return `result:${hash(`v1:${clientHash}:${model}:${style}:${normalizedDecision}`)}`;
+  return `result:${hash(`v2:${clientHash}:${model}:${style}:${persona}:${normalizedDecision}`)}`;
 }
 
 export async function getCachedGeneration(
@@ -214,10 +216,11 @@ export async function getCachedGeneration(
   decision: string,
   style: ValidationStyle,
   model: string,
+  persona: ValidationPersona,
 ) {
   try {
     const cached = await getGenerationCache().get(
-      generationCacheKey(context.clientHash, decision, style, model),
+      generationCacheKey(context.clientHash, decision, style, model, persona),
     );
     const parsed = GenerateValidationResponseSchema.safeParse(cached);
     return parsed.success ? parsed.data : null;
@@ -232,11 +235,12 @@ export async function cacheGeneration(
   decision: string,
   style: ValidationStyle,
   model: string,
+  persona: ValidationPersona,
   response: GenerateValidationResponse,
 ) {
   try {
     await getGenerationCache().set(
-      generationCacheKey(context.clientHash, decision, style, model),
+      generationCacheKey(context.clientHash, decision, style, model, persona),
       response,
       {
         ttl: limits().cacheTtlSeconds,

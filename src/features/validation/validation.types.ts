@@ -5,11 +5,13 @@ import type {
   GenerateValidationResponseSchema,
   ValidationChartPointSchema,
   ValidationMetricSchema,
+  ValidationPersonaSchema,
   ValidationResultSchema,
   ValidationStyleSchema,
 } from "./validation.schema";
 
 export type ValidationStyle = z.infer<typeof ValidationStyleSchema>;
+export type ValidationPersona = z.infer<typeof ValidationPersonaSchema>;
 
 export interface ValidationStyleOption {
   id: ValidationStyle;

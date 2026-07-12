@@ -47,6 +47,12 @@ Most people have encountered analytics used to justify a preferred answer rather
 
 The generation route uses the OpenAI Responses API with a strict Zod-backed structured-output schema. The default model is `gpt-5.6-luna`, selected for this short, cost-sensitive generation task. Without an API key, the application returns deterministic demo data through the same response contract.
 
+Each generation randomly selects one of eight report personas, such as Deadpan
+Auditor, Sports Desk Analyst, Cosmic Quant, or Caffeinated Founder. The persona
+changes the summary voice and KPI vocabulary without changing the validation
+strength or structured response schema. Persona-aware cache keys preserve up to
+eight variants for the same decision, and older reports remain compatible.
+
 Paid generation is protected by configurable per-minute, per-client daily, and app-wide daily limits. Duplicate inputs are cached per hashed client for six hours, OpenAI calls time out after 20 seconds, oversized requests are rejected, and exhausted daily budgets fall back to demo data. The counters use Vercel Runtime Cache, so they are intentionally soft, regional MVP controls; use an atomic database or Redis counter before relying on them for billing-grade enforcement.
 
 ## Local development

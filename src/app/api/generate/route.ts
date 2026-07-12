@@ -1,8 +1,9 @@
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
-import { randomUUID } from "node:crypto";
+import { randomInt, randomUUID } from "node:crypto";
 
 import { createDemoValidation } from "@/features/validation/demo-validation";
+import { VALIDATION_PERSONAS } from "@/features/validation/validation.personas";
 import {
   GenerateValidationResponseSchema,
   GeneratedValidationContentSchema,
@@ -43,13 +44,16 @@ The user has already made a decision. Create an executive dashboard that humorou
 
 Requirements:
 - Return exactly five distinct metrics and seven to nine chronological chart points.
-- Use concise metric labels and values that can fit on dashboard cards.
+- Keep metric IDs under 48 characters, labels under 64, short labels under 32, values under 16, and deltas under 40.
+- Keep every chart label under 16 characters; prefer compact times, dates, quarters, or one-word phases.
 - Make the chart trend persuasively upward without using identical increments.
 - Write an executive summary between 60 and 90 words.
 - Never claim to have used real research, evidence, people, or data sources.
 - Do not provide genuine medical, legal, financial, or professional advice.
 - Do not repeat sensitive personal information beyond what the user supplied.
-- Keep the tone polished, restrained, and board-ready rather than cartoonish.`;
+- Commit fully to the supplied persona across the summary, metric names, metric deltas, and chart labels.
+- Avoid generic enterprise jargon unless the supplied persona specifically calls for it.
+- Keep the humor coherent and restrained rather than cartoonish. Do not use emoji or exclamation marks.`;
 
 export async function POST(request: Request) {
   const contentLength = Number(request.headers.get("content-length") ?? 0);
@@ -97,6 +101,7 @@ export async function POST(request: Request) {
   const { decision, style } = parsedRequest.data;
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
+  const persona = VALIDATION_PERSONAS[randomInt(VALIDATION_PERSONAS.length)];
 
   const burst = await enforceBurstLimit(request);
   if (!burst.allowed) {
@@ -111,14 +116,20 @@ export async function POST(request: Request) {
 
   if (!apiKey) {
     const payload = await withSharePath({
-      result: createDemoValidation(decision, style),
+      result: createDemoValidation(decision, style, persona.id),
       source: "demo",
       model,
     });
     return noStoreJson(payload);
   }
 
-  const cached = await getCachedGeneration(burst.context, decision, style, model);
+  const cached = await getCachedGeneration(
+    burst.context,
+    decision,
+    style,
+    model,
+    persona.id,
+  );
   if (cached) {
     const sharedCached = await withSharePath(cached);
     if (sharedCached.sharePath !== cached.sharePath) {
@@ -127,6 +138,7 @@ export async function POST(request: Request) {
         decision,
         style,
         model,
+        persona.id,
         sharedCached,
       );
     }
@@ -136,7 +148,7 @@ export async function POST(request: Request) {
   const budget = await reserveGenerationBudget(burst.context);
   if (!budget.allowed) {
     const payload = await withSharePath({
-      result: createDemoValidation(decision, style),
+      result: createDemoValidation(decision, style, persona.id),
       source: "demo",
       model,
       notice:
@@ -157,7 +169,7 @@ export async function POST(request: Request) {
     const response = await client.responses.parse({
       model,
       instructions: SYSTEM_PROMPT,
-      input: `Decision: ${decision}\nValidation style: ${style}\nDirection: ${STYLE_DIRECTION[style]}`,
+      input: `Decision: ${decision}\nValidation style: ${style}\nValidation direction: ${STYLE_DIRECTION[style]}\nReport persona: ${persona.label}\nPersona direction: ${persona.direction}`,
       reasoning: { effort: "low" },
       max_output_tokens: 1_000,
       text: {
@@ -172,9 +184,21 @@ export async function POST(request: Request) {
       throw new Error("The model returned no parsed validation payload.");
     }
 
-    const generatedContent = GeneratedValidationContentSchema.parse(
-      response.output_parsed,
-    );
+    const generatedContent = GeneratedValidationContentSchema.parse({
+      ...response.output_parsed,
+      executiveSummary: clip(response.output_parsed.executiveSummary, 700),
+      metrics: response.output_parsed.metrics.map((metric) => ({
+        id: clip(metric.id, 48),
+        label: clip(metric.label, 64),
+        shortLabel: clip(metric.shortLabel, 32),
+        value: clip(metric.value, 16),
+        delta: clip(metric.delta, 40),
+      })),
+      chart: response.output_parsed.chart.map((point) => ({
+        ...point,
+        label: clip(point.label, 16),
+      })),
+    });
 
     const payload = await withSharePath(
       {
@@ -182,6 +206,7 @@ export async function POST(request: Request) {
           id: validationId,
           decision,
           style,
+          persona: persona.id,
           ...generatedContent,
           createdAt: new Date().toISOString(),
         },
@@ -194,7 +219,14 @@ export async function POST(request: Request) {
       },
     );
 
-    await cacheGeneration(burst.context, decision, style, model, payload);
+    await cacheGeneration(
+      burst.context,
+      decision,
+      style,
+      model,
+      persona.id,
+      payload,
+    );
     return noStoreJson(payload);
   } catch (error) {
     console.error("OpenAI validation generation failed", error);
@@ -233,6 +265,10 @@ function safeJsonParse(value: string) {
   } catch {
     return null;
   }
+}
+
+function clip(value: string, maximumLength: number) {
+  return value.trim().slice(0, maximumLength).trim();
 }
 
 async function withSharePath(

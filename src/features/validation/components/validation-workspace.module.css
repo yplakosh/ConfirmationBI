@@ -32,7 +32,8 @@
 
 .soonBadge,
 .modeBadge,
-.styleBadge {
+.styleBadge,
+.personaBadge {
   border-radius: 999px;
   display: inline-flex;
   font-family: var(--font-mono);
@@ -47,6 +48,11 @@
 .styleBadge {
   background: var(--color-indigo-tint);
   color: var(--color-indigo);
+}
+
+.personaBadge {
+  background: var(--color-green-tint);
+  color: var(--color-green);
 }
 
 .generatorMain {

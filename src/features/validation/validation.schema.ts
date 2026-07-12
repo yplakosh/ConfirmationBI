@@ -1,10 +1,14 @@
 import { z } from "zod";
 
+import { VALIDATION_PERSONA_IDS } from "./validation.personas";
+
 export const ValidationStyleSchema = z.enum([
   "strong",
   "cautious",
   "external-factors",
 ]);
+
+export const ValidationPersonaSchema = z.enum(VALIDATION_PERSONA_IDS);
 
 export const GenerateValidationRequestSchema = z.object({
   decision: z.string().trim().min(3).max(280),
@@ -63,6 +67,7 @@ export const ValidationResultSchema = GeneratedValidationContentSchema.extend({
   id: z.string().min(1),
   decision: z.string().min(3).max(280),
   style: ValidationStyleSchema,
+  persona: ValidationPersonaSchema.optional(),
   createdAt: z.string().datetime(),
 });
 

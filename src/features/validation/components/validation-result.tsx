@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Brand } from "@/components/brand/brand";
 
 import { VALIDATION_STYLE_OPTIONS } from "../validation.constants";
+import { getValidationPersona } from "../validation.personas";
 import type { ValidationResult } from "../validation.types";
 import { AccountIndicator } from "./account-indicator";
 import { ValidationChart } from "./validation-chart";
@@ -39,6 +40,9 @@ export function ValidationResultView({
   const styleLabel =
     VALIDATION_STYLE_OPTIONS.find((option) => option.id === result.style)?.label ??
     "Validated";
+  const persona = result.persona
+    ? getValidationPersona(result.persona)
+    : undefined;
   const reportDate = new Intl.DateTimeFormat("en", {
     month: "short",
     day: "numeric",
@@ -110,6 +114,9 @@ export function ValidationResultView({
             <div className={styles.reportHeadingRow}>
               <span className={styles.reportEyebrow}>Validation report</span>
               <span className={styles.styleBadge}>{styleLabel}</span>
+              {persona ? (
+                <span className={styles.personaBadge}>Voice: {persona.label}</span>
+              ) : null}
             </div>
             <h1 className={styles.reportTitle}>{result.decision}</h1>
             <span className={styles.summaryLabel}>Executive summary</span>

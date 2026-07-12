@@ -12,7 +12,7 @@ import type { GenerateValidationResponse } from "./validation.types";
 import type { Json } from "@/lib/supabase/database.types";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
-const PROMPT_VERSION = "v1";
+const PROMPT_VERSION = "v2";
 
 interface TokenUsage {
   inputTokens?: number | null;
@@ -27,7 +27,7 @@ function hashInput(response: GenerateValidationResponse) {
 
   return createHash("sha256")
     .update(
-      `${PROMPT_VERSION}:${response.model}:${response.result.style}:${normalizedDecision}`,
+      `${PROMPT_VERSION}:${response.model}:${response.result.style}:${response.result.persona ?? "legacy"}:${normalizedDecision}`,
     )
     .digest("hex");
 }
