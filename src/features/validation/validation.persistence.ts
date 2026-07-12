@@ -131,3 +131,37 @@ export const getValidationByShareId = cache(async (shareId: string) => {
     visibility: data.visibility === "public" ? "public" : "unlisted",
   } as const;
 });
+
+export async function getPublicValidations(limit = 24) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("validations")
+    .select("result, share_id, published_at")
+    .eq("visibility", "public")
+    .not("published_at", "is", null)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Public validation gallery lookup failed", {
+      code: error.code,
+      message: error.message,
+    });
+    return [];
+  }
+
+  return (data ?? []).flatMap((row) => {
+    const result = ValidationResultSchema.safeParse(row.result);
+    if (!result.success || !row.published_at) return [];
+
+    return [
+      {
+        shareId: row.share_id,
+        publishedAt: row.published_at,
+        result: result.data,
+      },
+    ];
+  });
+}

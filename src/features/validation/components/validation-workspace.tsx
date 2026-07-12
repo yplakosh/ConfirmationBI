@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
 import { Brand } from "@/components/brand/brand";
@@ -38,9 +39,9 @@ function GeneratorHeader() {
     <header className={styles.appHeader}>
       <Brand />
       <div className={styles.generatorHeaderActions}>
-        <div className={styles.galleryPreview} aria-label="Hall of Validation coming soon">
-          Hall of Validation <span className={styles.soonBadge}>soon</span>
-        </div>
+        <Link className={styles.galleryPreview} href="/hall">
+          Hall of Validation <span aria-hidden="true">→</span>
+        </Link>
         <AccountIndicator />
       </div>
     </header>

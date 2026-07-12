@@ -19,7 +19,7 @@ Most people have encountered analytics used to justify a preferred answer rather
 
 - A single-page validation generator
 - Structured AI-generated dashboard data, rendered locally
-- Unlisted, shareable validation pages and a future Hall of Validation
+- Unlisted, shareable validation pages and a public Hall of Validation
 - Authentication required only to publish or vote
 - Deliberate public publishing; results are never public by default
 - Sensible generation limits, caching, and a daily budget ceiling
@@ -41,8 +41,8 @@ Most people have encountered analytics used to justify a preferred answer rather
 
 - Next.js App Router with React and TypeScript
 - CSS Modules and shared design tokens
-- OpenAI structured output through a server-side route (planned)
-- Supabase Postgres for unlisted report persistence; Auth remains planned
+- OpenAI structured output through a server-side route
+- Supabase Postgres for report persistence and magic-link authentication
 - Vercel deployment
 
 The generation route uses the OpenAI Responses API with a strict Zod-backed structured-output schema. The default model is `gpt-5.6-luna`, selected for this short, cost-sensitive generation task. Without an API key, the application returns deterministic demo data through the same response contract.
@@ -108,4 +108,4 @@ Application code lives under `src/`:
 
 ## Status
 
-The responsive generator, structured generation route, results dashboard, MVP safeguards, Supabase persistence, unlisted sharing, magic-link authentication, and explicit public publishing are implemented. The Hall of Validation remains deferred.
+The responsive generator, structured generation route, results dashboard, MVP safeguards, Supabase persistence, unlisted sharing, magic-link authentication, explicit public publishing, and the Hall of Validation are implemented. Voting remains deferred.

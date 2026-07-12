@@ -1,0 +1,290 @@
+.page {
+  min-height: 100svh;
+}
+
+.header {
+  align-items: center;
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  height: 60px;
+  justify-content: space-between;
+  padding: 0 var(--page-gutter);
+}
+
+.headerActions {
+  align-items: center;
+  display: flex;
+  gap: var(--space-5);
+}
+
+.createLink {
+  color: var(--color-subtle-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.createLink:hover {
+  color: var(--color-indigo);
+}
+
+.main {
+  margin: 0 auto;
+  max-width: var(--content-width);
+  padding: clamp(3rem, 7vw, 5.5rem) var(--page-gutter) 5rem;
+}
+
+.hero {
+  align-items: end;
+  border-bottom: 1px solid var(--color-border);
+  display: grid;
+  gap: var(--space-8);
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-bottom: var(--space-8);
+}
+
+.eyebrow,
+.cardEyebrow,
+.reportCount,
+.cardFooter,
+.styleBadge,
+.personaBadge {
+  font-family: var(--font-mono);
+}
+
+.eyebrow,
+.cardEyebrow {
+  color: var(--color-indigo);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.title {
+  font-size: clamp(2.75rem, 7vw, 5rem);
+  letter-spacing: -0.06em;
+  line-height: 0.96;
+  margin: var(--space-4) 0 0;
+  text-wrap: balance;
+}
+
+.lede {
+  color: var(--color-subtle-text);
+  font-size: clamp(1rem, 1.6vw, 1.125rem);
+  line-height: 1.55;
+  margin: var(--space-4) 0 0;
+  max-width: 42rem;
+}
+
+.reportCount {
+  color: var(--color-muted-text);
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
+
+.grid {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding-top: var(--space-8);
+}
+
+.cardLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  height: 100%;
+  min-height: 23rem;
+  padding: var(--space-6);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+  flex-direction: column;
+}
+
+.cardLink:hover .card {
+  border-color: #c6cce8;
+  box-shadow: 0 12px 28px rgb(16 24 40 / 10%);
+  transform: translateY(-3px);
+}
+
+.cardTopline {
+  align-items: baseline;
+  display: flex;
+  gap: var(--space-4);
+  justify-content: space-between;
+}
+
+.confidence {
+  color: var(--color-indigo);
+  font-family: var(--font-mono);
+  font-size: 1.125rem;
+}
+
+.decision {
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  letter-spacing: -0.035em;
+  line-height: 1.18;
+  margin: var(--space-8) 0 0;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.confidenceCaption {
+  color: var(--color-green);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-top: var(--space-2);
+}
+
+.badges {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-8);
+}
+
+.styleBadge,
+.personaBadge {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.styleBadge {
+  background: var(--color-indigo-tint);
+  color: var(--color-indigo);
+}
+
+.personaBadge {
+  background: var(--color-green-tint);
+  color: var(--color-green);
+}
+
+.cardFooter {
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted-text);
+  display: flex;
+  font-size: 0.625rem;
+  gap: var(--space-3);
+  justify-content: space-between;
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+}
+
+.cardFooter span {
+  color: var(--color-indigo);
+  white-space: nowrap;
+}
+
+.emptyState {
+  align-items: center;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-8);
+  padding: clamp(3rem, 8vw, 6rem) var(--space-6);
+  text-align: center;
+}
+
+.emptyMark {
+  color: var(--color-indigo);
+  font-family: var(--font-mono);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 600;
+}
+
+.emptyState h2 {
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+  margin: var(--space-5) 0 0;
+}
+
+.emptyState p {
+  color: var(--color-subtle-text);
+  line-height: 1.55;
+  margin: var(--space-3) 0 0;
+  max-width: 30rem;
+}
+
+.emptyCta {
+  align-items: center;
+  background: var(--color-indigo);
+  border-radius: var(--radius-control);
+  color: var(--color-card);
+  display: inline-flex;
+  font-weight: 600;
+  justify-content: center;
+  margin-top: var(--space-6);
+  min-height: 44px;
+  padding: 0 var(--space-5);
+  text-decoration: none;
+}
+
+.emptyCta:hover {
+  background: var(--color-indigo-hover);
+}
+
+@media (max-width: 64rem) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 48rem) {
+  .hero {
+    align-items: start;
+    grid-template-columns: 1fr;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    min-height: 20rem;
+  }
+}
+
+@media (max-width: 30rem) {
+  .header {
+    height: 58px;
+  }
+
+  .headerActions {
+    gap: var(--space-3);
+  }
+
+  .createLink {
+    font-size: 0.75rem;
+  }
+
+  .main {
+    padding-top: var(--space-8);
+  }
+
+  .cardFooter {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

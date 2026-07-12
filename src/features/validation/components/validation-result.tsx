@@ -90,6 +90,9 @@ export function ValidationResultView({
               Create your own
             </Link>
           )}
+          <Link className={styles.quietButton} href="/hall">
+            Hall
+          </Link>
           <button className={styles.secondaryButton} type="button" onClick={shareResult}>
             Share result
           </button>
