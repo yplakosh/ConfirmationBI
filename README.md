@@ -53,7 +53,7 @@ changes the summary voice and KPI vocabulary without changing the validation
 strength or structured response schema. Persona-aware cache keys preserve up to
 eight variants for the same decision, and older reports remain compatible.
 
-Paid generation is protected by configurable per-minute, per-client daily, and app-wide daily limits. Duplicate inputs are cached per hashed client for six hours, OpenAI calls time out after 20 seconds, oversized requests are rejected, and exhausted daily budgets fall back to demo data. The counters use Vercel Runtime Cache, so they are intentionally soft, regional MVP controls; use an atomic database or Redis counter before relying on them for billing-grade enforcement.
+Paid generation is protected by configurable per-minute, anonymous daily, authenticated daily, and app-wide daily limits. Demo-friendly defaults allow 20 requests per minute, 100 anonymous requests per day, 500 authenticated requests per day, and 2,500 requests per day across the app. Authenticated identities are verified from the Supabase session; anonymous visitors are grouped by hashed IP. Duplicate inputs are cached per hashed client for six hours, OpenAI calls time out after 20 seconds, oversized requests are rejected, and exhausted daily budgets fall back to demo data. The counters use Vercel Runtime Cache, so they are intentionally soft, regional MVP controls; use an atomic database or Redis counter before relying on them for billing-grade enforcement.
 
 ## Local development
 

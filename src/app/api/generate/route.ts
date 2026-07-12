@@ -21,6 +21,7 @@ import {
   getCachedGeneration,
   reserveGenerationBudget,
 } from "@/lib/generation-guard";
+import { createSupabaseAuthServerClient } from "@/lib/supabase/auth-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -103,7 +104,8 @@ export async function POST(request: Request) {
   const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
   const persona = VALIDATION_PERSONAS[randomInt(VALIDATION_PERSONAS.length)];
 
-  const burst = await enforceBurstLimit(request);
+  const authenticatedUserId = await getAuthenticatedUserId();
+  const burst = await enforceBurstLimit(request, authenticatedUserId);
   if (!burst.allowed) {
     return noStoreJson(
       { error: "Too many analyses at once. Wait a moment and try again." },
@@ -245,6 +247,23 @@ function readOpenAITimeout() {
   return Number.isFinite(configured) && configured >= 5_000 && configured <= 25_000
     ? configured
     : DEFAULT_OPENAI_TIMEOUT_MS;
+}
+
+async function getAuthenticatedUserId() {
+  try {
+    const supabase = await createSupabaseAuthServerClient();
+    if (!supabase) return undefined;
+
+    const { data, error } = await supabase.auth.getClaims();
+    if (error) return undefined;
+
+    return typeof data?.claims?.sub === "string"
+      ? data.claims.sub
+      : undefined;
+  } catch (error) {
+    console.warn("Generation auth lookup failed; using anonymous limits", error);
+    return undefined;
+  }
 }
 
 function createValidationId() {

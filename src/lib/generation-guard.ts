@@ -17,9 +17,10 @@ function getGenerationCache() {
 }
 
 const DEFAULT_LIMITS = {
-  burst: 3,
-  perClientDaily: 10,
-  globalDaily: 250,
+  burst: 20,
+  anonymousDaily: 100,
+  authenticatedDaily: 500,
+  globalDaily: 2_500,
   cacheTtlSeconds: 6 * 60 * 60,
 } as const;
 
@@ -30,6 +31,7 @@ interface Counter {
 
 interface GuardContext {
   clientHash: string;
+  audience: "anonymous" | "authenticated";
   now: number;
 }
 
@@ -60,9 +62,14 @@ function limits() {
       DEFAULT_LIMITS.burst,
       100,
     ),
-    perClientDaily: readPositiveInteger(
-      "GENERATION_DAILY_LIMIT",
-      DEFAULT_LIMITS.perClientDaily,
+    anonymousDaily: readPositiveInteger(
+      "GENERATION_ANONYMOUS_DAILY_LIMIT",
+      DEFAULT_LIMITS.anonymousDaily,
+      10_000,
+    ),
+    authenticatedDaily: readPositiveInteger(
+      "GENERATION_AUTHENTICATED_DAILY_LIMIT",
+      DEFAULT_LIMITS.authenticatedDaily,
       10_000,
     ),
     globalDaily: readPositiveInteger(
@@ -82,14 +89,18 @@ function hash(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function getClientHash(request: Request) {
-  const address = ipAddress(request) ?? "local-development";
+function getClientHash(request: Request, authenticatedUserId?: string) {
   const salt =
     process.env.GENERATION_IP_HASH_SALT ??
     process.env.VERCEL_PROJECT_ID ??
     "confirmationbi-local";
 
-  return hash(`${salt}:${address}`);
+  if (authenticatedUserId) {
+    return hash(`${salt}:user:${authenticatedUserId}`);
+  }
+
+  const address = ipAddress(request) ?? "local-development";
+  return hash(`${salt}:ip:${address}`);
 }
 
 function isCounter(value: unknown): value is Counter {
@@ -130,9 +141,14 @@ function endOfUtcDay(now: number) {
 
 export async function enforceBurstLimit(
   request: Request,
+  authenticatedUserId?: string,
 ): Promise<BurstLimitResult> {
   const now = Date.now();
-  const context = { clientHash: getClientHash(request), now };
+  const context = {
+    clientHash: getClientHash(request, authenticatedUserId),
+    audience: authenticatedUserId ? "authenticated" : "anonymous",
+    now,
+  } satisfies GuardContext;
   const windowStart = Math.floor(now / 60_000) * 60_000;
   const resetAt = windowStart + 60_000;
   const key = `burst:${context.clientHash}:${windowStart}`;
@@ -164,9 +180,13 @@ export async function reserveGenerationBudget(
 ): Promise<BudgetReservationResult> {
   const resetAt = endOfUtcDay(context.now);
   const day = new Date(context.now).toISOString().slice(0, 10);
-  const clientKey = `daily:${context.clientHash}:${day}`;
+  const clientKey = `daily:${context.audience}:${context.clientHash}:${day}`;
   const globalKey = `global:${day}`;
   const configuredLimits = limits();
+  const clientDailyLimit =
+    context.audience === "authenticated"
+      ? configuredLimits.authenticatedDaily
+      : configuredLimits.anonymousDaily;
 
   try {
     const [clientCounter, globalCounter] = await Promise.all([
@@ -177,7 +197,7 @@ export async function reserveGenerationBudget(
     if (globalCounter.count >= configuredLimits.globalDaily) {
       return { allowed: false, limit: "global-daily" };
     }
-    if (clientCounter.count >= configuredLimits.perClientDaily) {
+    if (clientCounter.count >= clientDailyLimit) {
       return { allowed: false, limit: "client-daily" };
     }
 
