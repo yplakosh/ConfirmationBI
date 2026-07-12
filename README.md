@@ -30,6 +30,13 @@ Most people have encountered analytics used to justify a preferred answer rather
 - Do not present generated content as genuine medical, legal, financial, or professional advice.
 - Keep private decisions private unless the creator explicitly chooses to publish them.
 
+## Product design
+
+- [Version 1 UI canvas](docs/design/confirmationbi-ui-v1.html) — visual source of truth for the core desktop and mobile flow
+- [Version 1 design addendum](docs/design/confirmationbi-ui-v1-addendum.html) — final publish confirmation and mobile gallery
+- [Implementation notes](docs/design/implementation-notes.md) — required privacy, sharing, publishing, accessibility, and interaction behavior
+- [Wireframe brief](docs/wireframe-brief.md) — original product and UX direction
+
 ## Status
 
 Early concept and project setup. The first implementation will focus on a polished generator experience before adding persistence, authentication, and production safeguards.

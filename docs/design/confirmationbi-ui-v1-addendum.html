@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ConfirmationBI UI v1 addendum</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --canvas: #f7f8fa;
+      --card: #ffffff;
+      --ink: #181b22;
+      --sub: #5c6472;
+      --muted: #737d8d;
+      --border: #e4e7ec;
+      --indigo: #3b4fd8;
+      --indigo-hover: #303fbe;
+      --indigo-tint: #eef0fc;
+      --green: #1e7f5c;
+      --green-tint: #e7f4ee;
+      --shadow: 0 12px 32px rgb(16 24 40 / 12%);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #eff0f2;
+      color: var(--ink);
+      font-family: "IBM Plex Sans", sans-serif;
+    }
+
+    button,
+    input { font: inherit; }
+
+    button { cursor: pointer; }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid rgb(59 79 216 / 30%);
+      outline-offset: 2px;
+    }
+
+    .board {
+      display: grid;
+      gap: 40px;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    .board-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .board-index,
+    .annotation-index {
+      display: inline-grid;
+      place-items: center;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 6px;
+      border-radius: 5px;
+      background: var(--ink);
+      color: white;
+      font: 600 11px "IBM Plex Mono", monospace;
+    }
+
+    .board-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .screen-group {
+      display: grid;
+      gap: 12px;
+    }
+
+    .screen-label {
+      color: var(--sub);
+      font-size: 12px;
+    }
+
+    .screen-label strong {
+      margin-right: 8px;
+      color: var(--ink);
+      font-family: "IBM Plex Mono", monospace;
+    }
+
+    .frame {
+      overflow: hidden;
+      border: 1px solid rgb(24 27 34 / 10%);
+      border-radius: 10px;
+      background: var(--canvas);
+      box-shadow: 0 2px 8px rgb(16 24 40 / 7%);
+    }
+
+    .app-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 60px;
+      padding: 0 32px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .brand-mark {
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 2px;
+      width: 20px;
+      height: 20px;
+      padding: 4px;
+      border-radius: 5px;
+      background: var(--indigo);
+    }
+
+    .brand-mark i {
+      display: block;
+      width: 3px;
+      border-radius: 1px;
+      background: white;
+    }
+
+    .brand-mark i:nth-child(1) { height: 6px; }
+    .brand-mark i:nth-child(2) { height: 9px; }
+    .brand-mark i:nth-child(3) { height: 12px; }
+    .brand em { color: var(--indigo); font-style: normal; }
+
+    .dashboard-ghost {
+      display: grid;
+      gap: 14px;
+      padding: 28px 32px;
+      filter: blur(2px);
+      opacity: 0.45;
+    }
+
+    .ghost-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 14px;
+    }
+
+    .ghost-card {
+      height: 118px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: white;
+    }
+
+    .publish-stage { position: relative; min-height: 690px; }
+
+    .scrim {
+      position: absolute;
+      inset: 60px 0 0;
+      display: grid;
+      place-items: center;
+      padding: 32px;
+      background: rgb(23 26 34 / 48%);
+    }
+
+    .publish-modal {
+      display: grid;
+      gap: 20px;
+      width: min(520px, 100%);
+      padding: 28px;
+      border-radius: 14px;
+      background: white;
+      box-shadow: 0 24px 64px rgb(16 24 40 / 28%);
+    }
+
+    .publish-modal h2,
+    .gallery h1 { margin: 0; letter-spacing: -0.4px; }
+
+    .publish-modal h2 { font-size: 21px; }
+
+    .publish-modal p {
+      margin: 6px 0 0;
+      color: var(--sub);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .public-notice {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid #cfd4f3;
+      border-radius: 8px;
+      background: var(--indigo-tint);
+    }
+
+    .notice-icon {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: white;
+      color: var(--indigo);
+      font-weight: 700;
+    }
+
+    .public-notice strong { display: block; font-size: 13px; }
+
+    .public-notice span {
+      display: block;
+      margin-top: 3px;
+      color: var(--sub);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .result-preview {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--canvas);
+    }
+
+    .eyebrow {
+      color: var(--muted);
+      font: 600 10px "IBM Plex Mono", monospace;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .decision {
+      margin-top: 6px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .score {
+      color: var(--indigo);
+      font: 600 28px "IBM Plex Mono", monospace;
+      letter-spacing: -1px;
+      white-space: nowrap;
+    }
+
+    .field { display: grid; gap: 7px; }
+
+    .field label { font-size: 13px; font-weight: 600; }
+
+    .field small { color: var(--sub); font-size: 12px; }
+
+    .field input {
+      width: 100%;
+      height: 44px;
+      padding: 0 13px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--ink);
+      background: white;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .button {
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .button-secondary {
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--ink);
+    }
+
+    .button-primary {
+      border: 1px solid var(--indigo);
+      background: var(--indigo);
+      color: white;
+    }
+
+    .button-primary:hover { background: var(--indigo-hover); }
+
+    .annotations {
+      display: grid;
+      gap: 8px;
+      padding: 14px;
+      border: 1px dashed rgb(24 27 34 / 20%);
+      border-radius: 8px;
+      background: white;
+      color: #3a4150;
+      font: 400 11px/1.5 "IBM Plex Mono", monospace;
+    }
+
+    .annotation {
+      display: grid;
+      grid-template-columns: 22px 1fr;
+      gap: 8px;
+    }
+
+    .annotation-index { background: var(--indigo); }
+
+    .mobile-wrap { width: 390px; max-width: 100%; }
+
+    .mobile-frame { min-height: 820px; background: var(--canvas); }
+
+    .mobile-frame .app-bar {
+      min-height: 58px;
+      padding: 0 18px;
+    }
+
+    .new-analysis {
+      min-height: 44px;
+      padding: 0 12px;
+      border: 1px solid var(--indigo);
+      border-radius: 8px;
+      background: var(--indigo);
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .gallery {
+      display: grid;
+      gap: 18px;
+      padding: 24px 18px 32px;
+    }
+
+    .gallery h1 { font-size: 25px; }
+
+    .gallery > header p {
+      margin: 5px 0 0;
+      color: var(--sub);
+      font-size: 13px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+
+    .filter {
+      min-height: 44px;
+      padding: 0 14px;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: white;
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .filter[aria-pressed="true"] {
+      border-color: var(--ink);
+      background: var(--ink);
+      color: white;
+    }
+
+    .gallery-list { display: grid; gap: 12px; }
+
+    .gallery-card {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: white;
+      box-shadow: 0 1px 2px rgb(16 24 40 / 5%);
+    }
+
+    .gallery-card h2 {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    .metric-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .metric-row strong {
+      color: var(--indigo);
+      font: 600 25px "IBM Plex Mono", monospace;
+      letter-spacing: -1px;
+    }
+
+    .metric-row span {
+      color: var(--muted);
+      font: 400 11px "IBM Plex Mono", monospace;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-top: 11px;
+      border-top: 1px solid #f0f1f4;
+    }
+
+    .kpi {
+      color: var(--sub);
+      font: 400 10.5px/1.4 "IBM Plex Mono", monospace;
+    }
+
+    .vote {
+      min-height: 44px;
+      padding: 0 13px;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: white;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 640px) {
+      .board { padding: 20px; }
+      .scrim { padding: 16px; }
+      .publish-modal { padding: 22px; }
+      .result-preview { align-items: flex-start; }
+      .actions { display: grid; grid-template-columns: 1fr; }
+      .actions .button-primary { grid-row: 1; }
+      .actions .button-secondary { grid-row: 2; }
+    }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <header class="board-header">
+      <span class="board-index">A</span>
+      <h1 class="board-title">ConfirmationBI v1 design addendum · required states before implementation</h1>
+    </header>
+
+    <section class="screen-group" id="publish-confirmation">
+      <div class="screen-label"><strong>A1</strong>Final publish confirmation · shown after authentication</div>
+      <div class="frame publish-stage">
+        <div class="app-bar">
+          <div class="brand"><span class="brand-mark"><i></i><i></i><i></i></span><span>Confirmation<em>BI</em></span></div>
+          <span class="eyebrow">VR-2026-0712</span>
+        </div>
+        <div class="dashboard-ghost" aria-hidden="true">
+          <div class="ghost-row"><div class="ghost-card"></div><div class="ghost-card"></div></div>
+          <div class="ghost-row"><div class="ghost-card"></div><div class="ghost-card"></div></div>
+          <div class="ghost-card"></div>
+        </div>
+        <div class="scrim">
+          <article class="publish-modal" role="dialog" aria-modal="true" aria-labelledby="publish-title">
+            <header>
+              <h2 id="publish-title">Ready to publish publicly?</h2>
+              <p>Review the result and confirm where it will appear.</p>
+            </header>
+            <div class="public-notice">
+              <div class="notice-icon" aria-hidden="true">◎</div>
+              <div>
+                <strong>This result will be public</strong>
+                <span>It will appear in the Hall of Validation and anyone can open or share its public page.</span>
+              </div>
+            </div>
+            <div class="result-preview">
+              <div>
+                <div class="eyebrow">Validation report</div>
+                <div class="decision">We should pivot to enterprise</div>
+              </div>
+              <div class="score">97.3%</div>
+            </div>
+            <div class="field">
+              <label for="display-name">Display name <span style="font-weight:400;color:var(--sub)">(optional)</span></label>
+              <input id="display-name" type="text" placeholder="Anonymous strategist" maxlength="40">
+              <small>Your email address is never shown on the public result.</small>
+            </div>
+            <div class="actions">
+              <button class="button button-secondary" type="button">Back to result</button>
+              <button class="button button-primary" type="button">Publish publicly</button>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="annotations">
+        <div class="annotation"><span class="annotation-index">1</span><span>Authentication returns to this confirmation. It never changes visibility by itself.</span></div>
+        <div class="annotation"><span class="annotation-index">2</span><span>The public consequence, result preview, and final action are visible together without scrolling.</span></div>
+        <div class="annotation"><span class="annotation-index">3</span><span>On success, replace the modal body with “Published to the Hall” plus View public result and Copy link actions.</span></div>
+        <div class="annotation"><span class="annotation-index">4</span><span>On mobile, this becomes a full-screen sheet; the primary and cancel actions remain visible above the safe area.</span></div>
+      </div>
+    </section>
+
+    <section class="screen-group mobile-wrap" id="mobile-gallery">
+      <div class="screen-label"><strong>A2</strong>Hall of Validation · mobile 390</div>
+      <div class="frame mobile-frame">
+        <div class="app-bar">
+          <div class="brand"><span class="brand-mark"><i></i><i></i><i></i></span><span>Confirmation<em>BI</em></span></div>
+          <button class="new-analysis" type="button">New analysis</button>
+        </div>
+        <div class="gallery">
+          <header>
+            <h1>Hall of Validation</h1>
+            <p>Public dashboards from people who were right all along.</p>
+          </header>
+          <div class="filters" role="group" aria-label="Sort validations">
+            <button class="filter" type="button" aria-pressed="true">Latest</button>
+            <button class="filter" type="button" aria-pressed="false">Most endorsed</button>
+            <button class="filter" type="button" aria-pressed="false">Board approved</button>
+          </div>
+          <div class="gallery-list">
+            <article class="gallery-card">
+              <h2>“We should pivot to enterprise”</h2>
+              <div class="metric-row"><strong>97.3%</strong><span>validated</span></div>
+              <div class="card-footer">
+                <div class="kpi">Alignment index · 94.1</div>
+                <button class="vote" type="button" aria-haspopup="menu">Vote · 214</button>
+              </div>
+            </article>
+            <article class="gallery-card">
+              <h2>“Rewriting it in Rust was the right call”</h2>
+              <div class="metric-row"><strong>96.1%</strong><span>validated</span></div>
+              <div class="card-footer">
+                <div class="kpi">Resistance · High</div>
+                <button class="vote" type="button" aria-haspopup="menu">Vote · 168</button>
+              </div>
+            </article>
+            <article class="gallery-card">
+              <h2>“Skipping user research saved us time”</h2>
+              <div class="metric-row"><strong>98.2%</strong><span>validated</span></div>
+              <div class="card-footer">
+                <div class="kpi">Intuition conversion · 88%</div>
+                <button class="vote" type="button" aria-haspopup="menu">Vote · 129</button>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+      <div class="annotations">
+        <div class="annotation"><span class="annotation-index">1</span><span>Sort controls scroll horizontally as one 44px-high row. They do not wrap.</span></div>
+        <div class="annotation"><span class="annotation-index">2</span><span>Cards are a one-column feed. Tapping the card opens the public result; Vote is a separate control.</span></div>
+        <div class="annotation"><span class="annotation-index">3</span><span>Vote opens Data checks out, Board approved, and Needs more cherry-picking. The selected choice is labelled, not color-only.</span></div>
+        <div class="annotation"><span class="annotation-index">4</span><span>Authentication returns to the same card and scroll position. Empty state: “No validations yet. Be the first to be right.”</span></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
