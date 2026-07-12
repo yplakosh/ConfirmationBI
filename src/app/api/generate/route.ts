@@ -4,11 +4,16 @@ import { randomUUID } from "node:crypto";
 
 import { createDemoValidation } from "@/features/validation/demo-validation";
 import {
+  GenerateValidationResponseSchema,
   GeneratedValidationContentSchema,
   GenerateValidationRequestSchema,
   OpenAIGeneratedValidationContentSchema,
 } from "@/features/validation/validation.schema";
-import type { ValidationStyle } from "@/features/validation/validation.types";
+import { persistValidation } from "@/features/validation/validation.persistence";
+import type {
+  GenerateValidationResponse,
+  ValidationStyle,
+} from "@/features/validation/validation.types";
 import {
   cacheGeneration,
   enforceBurstLimit,
@@ -93,14 +98,6 @@ export async function POST(request: Request) {
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
 
-  if (!apiKey) {
-    return noStoreJson({
-      result: createDemoValidation(decision, style),
-      source: "demo",
-      model,
-    });
-  }
-
   const burst = await enforceBurstLimit(request);
   if (!burst.allowed) {
     return noStoreJson(
@@ -112,14 +109,33 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!apiKey) {
+    const payload = await withSharePath({
+      result: createDemoValidation(decision, style),
+      source: "demo",
+      model,
+    });
+    return noStoreJson(payload);
+  }
+
   const cached = await getCachedGeneration(burst.context, decision, style, model);
   if (cached) {
-    return noStoreJson({ ...cached, cached: true });
+    const sharedCached = await withSharePath(cached);
+    if (sharedCached.sharePath !== cached.sharePath) {
+      await cacheGeneration(
+        burst.context,
+        decision,
+        style,
+        model,
+        sharedCached,
+      );
+    }
+    return noStoreJson({ ...sharedCached, cached: true });
   }
 
   const budget = await reserveGenerationBudget(burst.context);
   if (!budget.allowed) {
-    return noStoreJson({
+    const payload = await withSharePath({
       result: createDemoValidation(decision, style),
       source: "demo",
       model,
@@ -128,9 +144,11 @@ export async function POST(request: Request) {
           ? "Your live-analysis allowance resets at midnight UTC. Showing demo data for now."
           : "The live-analysis budget is resting. Showing demo data for now.",
     });
+    return noStoreJson(payload);
   }
 
   try {
+    const validationId = createValidationId();
     const client = new OpenAI({
       apiKey,
       maxRetries: 0,
@@ -158,17 +176,23 @@ export async function POST(request: Request) {
       response.output_parsed,
     );
 
-    const payload = {
-      result: {
-        id: createValidationId(),
-        decision,
-        style,
-        ...generatedContent,
-        createdAt: new Date().toISOString(),
+    const payload = await withSharePath(
+      {
+        result: {
+          id: validationId,
+          decision,
+          style,
+          ...generatedContent,
+          createdAt: new Date().toISOString(),
+        },
+        source: "openai",
+        model,
       },
-      source: "openai",
-      model,
-    } as const;
+      {
+        inputTokens: response.usage?.input_tokens,
+        outputTokens: response.usage?.output_tokens,
+      },
+    );
 
     await cacheGeneration(burst.context, decision, style, model, payload);
     return noStoreJson(payload);
@@ -208,5 +232,20 @@ function safeJsonParse(value: string) {
     return JSON.parse(value) as unknown;
   } catch {
     return null;
+  }
+}
+
+async function withSharePath(
+  value: GenerateValidationResponse,
+  usage?: { inputTokens?: number | null; outputTokens?: number | null },
+) {
+  const response = GenerateValidationResponseSchema.parse(value);
+
+  try {
+    const shareId = await persistValidation(response, usage);
+    return shareId ? { ...response, sharePath: `/v/${shareId}` } : response;
+  } catch (error) {
+    console.error("Validation persistence was unavailable", error);
+    return response;
   }
 }

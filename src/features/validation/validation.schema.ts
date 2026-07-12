@@ -72,4 +72,5 @@ export const GenerateValidationResponseSchema = z.object({
   model: z.string().min(1),
   cached: z.boolean().optional(),
   notice: z.string().min(1).max(180).optional(),
+  sharePath: z.string().regex(/^\/v\/[0-9a-f-]{36}$/).optional(),
 });

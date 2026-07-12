@@ -11,6 +11,7 @@
     "check": "npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.110.2",
     "@vercel/functions": "^3.7.5",
     "next": "16.2.10",
     "openai": "^6.46.0",

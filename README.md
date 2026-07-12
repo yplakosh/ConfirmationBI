@@ -19,7 +19,7 @@ Most people have encountered analytics used to justify a preferred answer rather
 
 - A single-page validation generator
 - Structured AI-generated dashboard data, rendered locally
-- Public, shareable validation pages and a Hall of Validation
+- Unlisted, shareable validation pages and a future Hall of Validation
 - Authentication required only to publish or vote
 - Deliberate public publishing; results are never public by default
 - Sensible generation limits, caching, and a daily budget ceiling
@@ -42,7 +42,7 @@ Most people have encountered analytics used to justify a preferred answer rather
 - Next.js App Router with React and TypeScript
 - CSS Modules and shared design tokens
 - OpenAI structured output through a server-side route (planned)
-- Supabase Postgres and Auth for persistence and publishing (planned)
+- Supabase Postgres for unlisted report persistence; Auth remains planned
 - Vercel deployment
 
 The generation route uses the OpenAI Responses API with a strict Zod-backed structured-output schema. The default model is `gpt-5.6-luna`, selected for this short, cost-sensitive generation task. Without an API key, the application returns deterministic demo data through the same response contract.
@@ -71,6 +71,18 @@ GENERATION_IP_HASH_SALT=replace_with_a_long_random_value
 
 Restart `npm run dev` after changing environment variables. Keep `OPENAI_API_KEY` server-only and never prefix it with `NEXT_PUBLIC_`.
 
+To persist results and create unlisted share links, add the Supabase project URL
+and a modern server secret from **Supabase → Settings → API Keys**:
+
+```text
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SECRET_KEY=sb_secret_your_server_only_key
+```
+
+The secret key bypasses RLS and must never use a `NEXT_PUBLIC_` prefix. The
+database schema is versioned under `supabase/migrations/`; unlisted reports are
+read only by server-side code and are marked `noindex`.
+
 Run the complete local verification suite with:
 
 ```bash
@@ -86,4 +98,4 @@ Application code lives under `src/`:
 
 ## Status
 
-The responsive generator, analytical loading state, structured generation route, results dashboard, and MVP generation safeguards are implemented. Supabase persistence, authentication, and publishing remain deferred.
+The responsive generator, analytical loading state, structured generation route, results dashboard, MVP generation safeguards, Supabase persistence, and unlisted share pages are implemented. Authentication, public publishing, and the Hall of Validation remain deferred.
