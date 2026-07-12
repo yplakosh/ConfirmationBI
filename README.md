@@ -47,6 +47,8 @@ Most people have encountered analytics used to justify a preferred answer rather
 
 The generation route uses the OpenAI Responses API with a strict Zod-backed structured-output schema. The default model is `gpt-5.6-luna`, selected for this short, cost-sensitive generation task. Without an API key, the application returns deterministic demo data through the same response contract.
 
+Paid generation is protected by configurable per-minute, per-client daily, and app-wide daily limits. Duplicate inputs are cached per hashed client for six hours, OpenAI calls time out after 20 seconds, oversized requests are rejected, and exhausted daily budgets fall back to demo data. The counters use Vercel Runtime Cache, so they are intentionally soft, regional MVP controls; use an atomic database or Redis counter before relying on them for billing-grade enforcement.
+
 ## Local development
 
 Use Node.js 24, then install and run the application:
@@ -64,6 +66,7 @@ To enable live AI generation, add an OpenAI API key to `.env.local`:
 ```text
 OPENAI_API_KEY=your_key_here
 OPENAI_MODEL=gpt-5.6-luna
+GENERATION_IP_HASH_SALT=replace_with_a_long_random_value
 ```
 
 Restart `npm run dev` after changing environment variables. Keep `OPENAI_API_KEY` server-only and never prefix it with `NEXT_PUBLIC_`.
@@ -83,4 +86,4 @@ Application code lives under `src/`:
 
 ## Status
 
-The responsive generator, analytical loading state, structured generation route, and results dashboard are implemented. Supabase persistence, authentication, publishing, and production safeguards remain deferred.
+The responsive generator, analytical loading state, structured generation route, results dashboard, and MVP generation safeguards are implemented. Supabase persistence, authentication, and publishing remain deferred.

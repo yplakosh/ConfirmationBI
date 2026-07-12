@@ -70,4 +70,6 @@ export const GenerateValidationResponseSchema = z.object({
   result: ValidationResultSchema,
   source: z.enum(["openai", "demo"]),
   model: z.string().min(1),
+  cached: z.boolean().optional(),
+  notice: z.string().min(1).max(180).optional(),
 });

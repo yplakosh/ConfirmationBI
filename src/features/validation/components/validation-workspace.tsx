@@ -140,10 +140,11 @@ interface ResultViewProps {
   result: ValidationResult;
   source: GenerationSource;
   model: string;
+  notice?: string;
   onReset: () => void;
 }
 
-function ResultView({ result, source, model, onReset }: ResultViewProps) {
+function ResultView({ result, source, model, notice, onReset }: ResultViewProps) {
   const [shareMessage, setShareMessage] = useState("");
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const styleLabel =
@@ -200,7 +201,7 @@ function ResultView({ result, source, model, onReset }: ResultViewProps) {
         {source === "demo" ? (
           <div className={styles.demoNotice} role="status">
             <span className={styles.modeBadge}>Demo data</span>
-            Add `OPENAI_API_KEY` to use structured output from {model}.
+            {notice ?? `Add OPENAI_API_KEY to use structured output from ${model}.`}
           </div>
         ) : null}
         <div className={styles.reportGrid}>
@@ -295,6 +296,7 @@ export function ValidationWorkspace() {
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [source, setSource] = useState<GenerationSource>("demo");
   const [model, setModel] = useState("gpt-5.6-luna");
+  const [notice, setNotice] = useState<string | undefined>();
   const [error, setError] = useState("");
   const trimmedDecision = useMemo(() => decision.trim(), [decision]);
 
@@ -341,6 +343,7 @@ export function ValidationWorkspace() {
       setResult(parsed.result);
       setSource(parsed.source);
       setModel(parsed.model);
+      setNotice(parsed.notice);
       setView("result");
     } catch (caughtError) {
       setError(
@@ -362,6 +365,7 @@ export function ValidationWorkspace() {
         result={result}
         source={source}
         model={model}
+        notice={notice}
         onReset={() => setView("generator")}
       />
     );

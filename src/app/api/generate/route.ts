@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
+import { randomUUID } from "node:crypto";
 
 import { createDemoValidation } from "@/features/validation/demo-validation";
 import {
@@ -8,11 +9,19 @@ import {
   OpenAIGeneratedValidationContentSchema,
 } from "@/features/validation/validation.schema";
 import type { ValidationStyle } from "@/features/validation/validation.types";
+import {
+  cacheGeneration,
+  enforceBurstLimit,
+  getCachedGeneration,
+  reserveGenerationBudget,
+} from "@/lib/generation-guard";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
 const DEFAULT_MODEL = "gpt-5.6-luna";
+const MAX_REQUEST_BYTES = 2_048;
+const DEFAULT_OPENAI_TIMEOUT_MS = 20_000;
 
 const STYLE_DIRECTION: Record<ValidationStyle, string> = {
   strong:
@@ -38,12 +47,43 @@ Requirements:
 - Keep the tone polished, restrained, and board-ready rather than cartoonish.`;
 
 export async function POST(request: Request) {
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (contentLength > MAX_REQUEST_BYTES) {
+    return noStoreJson(
+      { error: "The decision payload is too large." },
+      { status: 413 },
+    );
+  }
+
+  if (
+    !request.headers
+      .get("content-type")
+      ?.toLowerCase()
+      .startsWith("application/json")
+  ) {
+    return noStoreJson(
+      { error: "Send the decision as JSON." },
+      { status: 415 },
+    );
+  }
+
+  const rawBody = await request.text().catch(() => null);
+  if (
+    rawBody &&
+    new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES
+  ) {
+    return noStoreJson(
+      { error: "The decision payload is too large." },
+      { status: 413 },
+    );
+  }
+
   const parsedRequest = GenerateValidationRequestSchema.safeParse(
-    await request.json().catch(() => null),
+    rawBody ? safeJsonParse(rawBody) : null,
   );
 
   if (!parsedRequest.success) {
-    return Response.json(
+    return noStoreJson(
       { error: "Enter one decision between 3 and 280 characters." },
       { status: 400 },
     );
@@ -54,15 +94,48 @@ export async function POST(request: Request) {
   const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
 
   if (!apiKey) {
-    return Response.json({
+    return noStoreJson({
       result: createDemoValidation(decision, style),
       source: "demo",
       model,
     });
   }
 
+  const burst = await enforceBurstLimit(request);
+  if (!burst.allowed) {
+    return noStoreJson(
+      { error: "Too many analyses at once. Wait a moment and try again." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(burst.retryAfterSeconds ?? 60) },
+      },
+    );
+  }
+
+  const cached = await getCachedGeneration(burst.context, decision, style, model);
+  if (cached) {
+    return noStoreJson({ ...cached, cached: true });
+  }
+
+  const budget = await reserveGenerationBudget(burst.context);
+  if (!budget.allowed) {
+    return noStoreJson({
+      result: createDemoValidation(decision, style),
+      source: "demo",
+      model,
+      notice:
+        budget.limit === "client-daily"
+          ? "Your live-analysis allowance resets at midnight UTC. Showing demo data for now."
+          : "The live-analysis budget is resting. Showing demo data for now.",
+    });
+  }
+
   try {
-    const client = new OpenAI({ apiKey });
+    const client = new OpenAI({
+      apiKey,
+      maxRetries: 0,
+      timeout: readOpenAITimeout(),
+    });
     const response = await client.responses.parse({
       model,
       instructions: SYSTEM_PROMPT,
@@ -85,9 +158,9 @@ export async function POST(request: Request) {
       response.output_parsed,
     );
 
-    return Response.json({
+    const payload = {
       result: {
-        id: `VR-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}`,
+        id: createValidationId(),
         decision,
         style,
         ...generatedContent,
@@ -95,15 +168,45 @@ export async function POST(request: Request) {
       },
       source: "openai",
       model,
-    });
+    } as const;
+
+    await cacheGeneration(burst.context, decision, style, model, payload);
+    return noStoreJson(payload);
   } catch (error) {
     console.error("OpenAI validation generation failed", error);
-    return Response.json(
+    return noStoreJson(
       {
         error:
           "The data refused to cooperate. Retry the analysis or continue in demo mode.",
       },
       { status: 502 },
     );
+  }
+}
+
+function readOpenAITimeout() {
+  const configured = Number.parseInt(process.env.GENERATION_TIMEOUT_MS ?? "", 10);
+  return Number.isFinite(configured) && configured >= 5_000 && configured <= 25_000
+    ? configured
+    : DEFAULT_OPENAI_TIMEOUT_MS;
+}
+
+function createValidationId() {
+  const date = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+  return `VR-${date}-${randomUUID().slice(0, 8).toUpperCase()}`;
+}
+
+function noStoreJson(body: unknown, init: ResponseInit = {}) {
+  const headers = new Headers(init.headers);
+  headers.set("Cache-Control", "no-store");
+  headers.set("X-Content-Type-Options", "nosniff");
+  return Response.json(body, { ...init, headers });
+}
+
+function safeJsonParse(value: string) {
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return null;
   }
 }
