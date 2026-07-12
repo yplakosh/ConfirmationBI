@@ -13,6 +13,7 @@ import type {
   ValidationResult,
   ValidationStyle,
 } from "../validation.types";
+import { AccountIndicator } from "./account-indicator";
 import {
   type GenerationSource,
   ValidationResultView,
@@ -36,8 +37,11 @@ function GeneratorHeader() {
   return (
     <header className={styles.appHeader}>
       <Brand />
-      <div className={styles.galleryPreview} aria-label="Hall of Validation coming soon">
-        Hall of Validation <span className={styles.soonBadge}>soon</span>
+      <div className={styles.generatorHeaderActions}>
+        <AccountIndicator />
+        <div className={styles.galleryPreview} aria-label="Hall of Validation coming soon">
+          Hall of Validation <span className={styles.soonBadge}>soon</span>
+        </div>
       </div>
     </header>
   );

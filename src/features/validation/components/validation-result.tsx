@@ -7,6 +7,7 @@ import { Brand } from "@/components/brand/brand";
 
 import { VALIDATION_STYLE_OPTIONS } from "../validation.constants";
 import type { ValidationResult } from "../validation.types";
+import { AccountIndicator } from "./account-indicator";
 import { ValidationChart } from "./validation-chart";
 import { PublishValidation } from "./publish-validation";
 import styles from "./validation-workspace.module.css";
@@ -75,6 +76,7 @@ export function ValidationResultView({
         <span className={styles.headerMeta}>
           {result.id} · {reportDate}
         </span>
+        <AccountIndicator />
         <div className={styles.resultsHeaderActions}>
           {onReset ? (
             <button className={styles.quietButton} type="button" onClick={onReset}>
