@@ -76,7 +76,6 @@ export function ValidationResultView({
         <span className={styles.headerMeta}>
           {result.id} · {reportDate}
         </span>
-        <AccountIndicator />
         <div className={styles.resultsHeaderActions}>
           {onReset ? (
             <button className={styles.quietButton} type="button" onClick={onReset}>
@@ -97,6 +96,7 @@ export function ValidationResultView({
             onPublished={() => setVisibility("public")}
           />
         </div>
+        <AccountIndicator />
       </header>
       <main className={styles.resultsMain}>
         {source === "demo" ? (

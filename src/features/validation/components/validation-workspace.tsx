@@ -38,10 +38,10 @@ function GeneratorHeader() {
     <header className={styles.appHeader}>
       <Brand />
       <div className={styles.generatorHeaderActions}>
-        <AccountIndicator />
         <div className={styles.galleryPreview} aria-label="Hall of Validation coming soon">
           Hall of Validation <span className={styles.soonBadge}>soon</span>
         </div>
+        <AccountIndicator />
       </div>
     </header>
   );

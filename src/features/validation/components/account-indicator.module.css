@@ -1,91 +1,159 @@
 .account {
+  justify-self: end;
+  position: relative;
+}
+
+.account summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.account summary::-webkit-details-marker {
+  display: none;
+}
+
+.avatarTrigger,
+.loginTrigger {
   align-items: center;
-  display: flex;
-  gap: var(--space-2);
-  min-width: 0;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 38px;
+}
+
+.avatarTrigger {
+  border-radius: 50%;
+  transition: transform 160ms ease;
+  width: 38px;
 }
 
 .avatar {
   background: var(--color-indigo-tint);
+  border: 1px solid #d8dcf7;
   border-radius: 50%;
   color: var(--color-indigo);
   display: grid;
-  flex: 0 0 auto;
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  height: 30px;
+  height: 32px;
   place-items: center;
-  width: 30px;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+  width: 32px;
 }
 
-.identity {
-  display: grid;
-  min-width: 0;
+.avatarTrigger:hover .avatar,
+.avatarTrigger:focus-visible .avatar {
+  box-shadow: 0 5px 14px rgb(59 79 216 / 22%);
+  transform: translateY(-1px) scale(1.06);
 }
 
-.prefix {
-  color: var(--color-muted-text);
-  font-size: 0.5625rem;
-  line-height: 1.2;
-  text-transform: uppercase;
+.account[open] .avatar {
+  background: var(--color-indigo);
+  box-shadow: 0 5px 16px rgb(59 79 216 / 28%);
+  color: var(--color-card);
+  transform: scale(1.04);
 }
 
-.email {
-  color: var(--color-subtle-text);
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.signOut {
-  background: transparent;
-  border: 0;
+.loginTrigger {
   color: var(--color-indigo);
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
-  min-height: 36px;
   padding: 0 var(--space-2);
   white-space: nowrap;
 }
 
-.signOut:disabled {
+.menu {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  box-shadow: 0 16px 48px rgb(16 24 40 / 16%);
+  display: grid;
+  gap: var(--space-3);
+  min-width: 280px;
+  padding: var(--space-4);
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--space-2));
+  z-index: 30;
+}
+
+.menuLabel,
+.emailLabel {
   color: var(--color-muted-text);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-@media (max-width: 70rem) {
-  .identity {
-    display: none;
-  }
+.email {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
 }
 
-@media (max-width: 48rem) {
-  .identity {
-    display: grid;
-  }
+.menuAction {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-indigo);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  min-height: 40px;
+  padding: var(--space-3) 0 0;
+  text-align: left;
+}
 
-  .prefix {
-    display: none;
-  }
+.loginForm {
+  display: grid;
+  gap: var(--space-3);
+}
 
-  .email {
-    max-width: 24vw;
-  }
+.input {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-ink);
+  min-height: 42px;
+  padding: 0 var(--space-3);
+  width: 100%;
+}
 
-  .signOut {
-    padding-inline: var(--space-1);
-  }
+.submit {
+  background: var(--color-indigo);
+  border: 1px solid var(--color-indigo);
+  border-radius: var(--radius-control);
+  color: var(--color-card);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  min-height: 42px;
+  padding: 0 var(--space-4);
+}
+
+.menuAction:disabled,
+.submit:disabled {
+  opacity: 0.65;
+}
+
+.message {
+  color: var(--color-subtle-text);
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 
 @media (max-width: 30rem) {
-  .identity {
-    display: none;
+  .menu {
+    min-width: min(280px, calc(100vw - 2 * var(--page-gutter)));
   }
+}
 
-  .signOut {
-    font-size: 0.625rem;
+@media (prefers-reduced-motion: reduce) {
+  .avatarTrigger,
+  .avatar {
+    transition: none;
   }
 }
