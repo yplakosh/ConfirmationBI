@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { getCache, ipAddress } from "@vercel/functions";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 import { GenerateValidationResponseSchema } from "@/features/validation/validation.schema";
 import type {
@@ -17,28 +18,23 @@ function getGenerationCache() {
 }
 
 const DEFAULT_LIMITS = {
-  burst: 20,
-  anonymousDaily: 100,
-  authenticatedDaily: 500,
-  globalDaily: 2_500,
+  burst: 6,
+  anonymousDaily: 5,
+  authenticatedDaily: 20,
+  globalDaily: 100,
   cacheTtlSeconds: 6 * 60 * 60,
 } as const;
-
-interface Counter {
-  count: number;
-  resetAt: number;
-}
 
 interface GuardContext {
   clientHash: string;
   audience: "anonymous" | "authenticated";
-  now: number;
 }
 
 export interface BurstLimitResult {
   allowed: boolean;
   context: GuardContext;
   retryAfterSeconds?: number;
+  limit?: BudgetLimit | "burst";
 }
 
 export type BudgetLimit = "client-daily" | "global-daily" | "guard-unavailable";
@@ -49,14 +45,17 @@ export interface BudgetReservationResult {
 }
 
 function readPositiveInteger(name: string, fallback: number, maximum: number) {
-  const value = Number.parseInt(process.env[name] ?? "", 10);
-  return Number.isFinite(value) && value > 0 && value <= maximum
+  const value = Number(process.env[name]);
+  return Number.isInteger(value) && value > 0 && value <= maximum
     ? value
     : fallback;
 }
 
 function limits() {
   return {
+    reportAnonymousDaily: readPositiveInteger("REPORT_ANONYMOUS_DAILY_LIMIT", 20, 10_000),
+    reportAuthenticatedDaily: readPositiveInteger("REPORT_AUTHENTICATED_DAILY_LIMIT", 50, 10_000),
+    reportGlobalDaily: readPositiveInteger("REPORT_GLOBAL_DAILY_LIMIT", 500, 1_000_000),
     burst: readPositiveInteger(
       "GENERATION_BURST_LIMIT",
       DEFAULT_LIMITS.burst,
@@ -103,117 +102,57 @@ function getClientHash(request: Request, authenticatedUserId?: string) {
   return hash(`${salt}:ip:${address}`);
 }
 
-function isCounter(value: unknown): value is Counter {
-  if (!value || typeof value !== "object") return false;
-  const candidate = value as Partial<Counter>;
-  return (
-    Number.isInteger(candidate.count) &&
-    Number.isFinite(candidate.resetAt) &&
-    (candidate.count ?? -1) >= 0
-  );
-}
-
-async function readCounter(key: string, resetAt: number) {
-  const value = await getGenerationCache().get(key);
-  if (!isCounter(value) || value.resetAt <= Date.now()) {
-    return { count: 0, resetAt } satisfies Counter;
-  }
-  return value;
-}
-
-async function writeCounter(key: string, counter: Counter, name: string) {
-  const ttl = Math.max(1, Math.ceil((counter.resetAt - Date.now()) / 1_000));
-  await getGenerationCache().set(key, counter, {
-    ttl,
-    name,
-    tags: ["generation-limits"],
+async function reserveQuota(context: GuardContext, kind: "report" | "paid") {
+  const admin = getSupabaseAdmin();
+  if (!admin) throw new Error("Quota database is not configured");
+  const config = limits();
+  const authenticated = context.audience === "authenticated";
+  const { data, error } = await admin.rpc("reserve_generation_quota", {
+    p_kind: kind,
+    p_client_hash: context.clientHash,
+    p_client_limit: kind === "report"
+      ? (authenticated ? config.reportAuthenticatedDaily : config.reportAnonymousDaily)
+      : (authenticated ? config.authenticatedDaily : config.anonymousDaily),
+    p_global_limit: kind === "report" ? config.reportGlobalDaily : config.globalDaily,
+    p_burst_limit: config.burst,
   });
-}
-
-function endOfUtcDay(now: number) {
-  const date = new Date(now);
-  return Date.UTC(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate() + 1,
-  );
+  const result = data?.[0];
+  if (error || !result || typeof result.allowed !== "boolean" ||
+      !["ok", "burst", "client-daily", "global-daily"].includes(result.reason) ||
+      !Number.isInteger(result.retry_after_seconds) || result.retry_after_seconds < 0 ||
+      (result.allowed !== (result.reason === "ok"))) {
+    throw new Error("Quota reservation failed");
+  }
+  return result;
 }
 
 export async function enforceBurstLimit(
   request: Request,
   authenticatedUserId?: string,
 ): Promise<BurstLimitResult> {
-  const now = Date.now();
   const context = {
     clientHash: getClientHash(request, authenticatedUserId),
     audience: authenticatedUserId ? "authenticated" : "anonymous",
-    now,
   } satisfies GuardContext;
-  const windowStart = Math.floor(now / 60_000) * 60_000;
-  const resetAt = windowStart + 60_000;
-  const key = `burst:${context.clientHash}:${windowStart}`;
-
   try {
-    const counter = await readCounter(key, resetAt);
-    if (counter.count >= limits().burst) {
-      return {
-        allowed: false,
-        context,
-        retryAfterSeconds: Math.max(1, Math.ceil((resetAt - now) / 1_000)),
-      };
-    }
-
-    await writeCounter(
-      key,
-      { count: counter.count + 1, resetAt },
-      "generation-burst-limit",
-    );
-    return { allowed: true, context };
+    // Reserve one report before ALL branches, including cache and demo responses.
+    const result = await reserveQuota(context, "report");
+    return { allowed: result.allowed, context,
+      limit: result.allowed ? undefined : result.reason as BudgetLimit | "burst",
+      retryAfterSeconds: result.retry_after_seconds };
   } catch (error) {
-    console.error("Generation burst guard failed closed", error);
-    return { allowed: false, context, retryAfterSeconds: 60 };
+    console.error("Generation report guard failed closed", error);
+    return { allowed: false, context, limit: "guard-unavailable", retryAfterSeconds: 60 };
   }
 }
 
 export async function reserveGenerationBudget(
   context: GuardContext,
 ): Promise<BudgetReservationResult> {
-  const resetAt = endOfUtcDay(context.now);
-  const day = new Date(context.now).toISOString().slice(0, 10);
-  const clientKey = `daily:${context.audience}:${context.clientHash}:${day}`;
-  const globalKey = `global:${day}`;
-  const configuredLimits = limits();
-  const clientDailyLimit =
-    context.audience === "authenticated"
-      ? configuredLimits.authenticatedDaily
-      : configuredLimits.anonymousDaily;
-
   try {
-    const [clientCounter, globalCounter] = await Promise.all([
-      readCounter(clientKey, resetAt),
-      readCounter(globalKey, resetAt),
-    ]);
-
-    if (globalCounter.count >= configuredLimits.globalDaily) {
-      return { allowed: false, limit: "global-daily" };
-    }
-    if (clientCounter.count >= clientDailyLimit) {
-      return { allowed: false, limit: "client-daily" };
-    }
-
-    await Promise.all([
-      writeCounter(
-        clientKey,
-        { count: clientCounter.count + 1, resetAt },
-        "client-daily-generation-limit",
-      ),
-      writeCounter(
-        globalKey,
-        { count: globalCounter.count + 1, resetAt },
-        "global-daily-generation-limit",
-      ),
-    ]);
-    return { allowed: true };
+    const result = await reserveQuota(context, "paid");
+    return { allowed: result.allowed,
+      limit: result.allowed ? undefined : result.reason as BudgetLimit };
   } catch (error) {
     console.error("Generation budget guard failed closed", error);
     return { allowed: false, limit: "guard-unavailable" };

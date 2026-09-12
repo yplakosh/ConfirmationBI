@@ -22,6 +22,7 @@ import {
   reserveGenerationBudget,
 } from "@/lib/generation-guard";
 import { createSupabaseAuthServerClient } from "@/lib/supabase/auth-server";
+import { paidGenerationEnabled } from "@/lib/generation-controls";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -108,19 +109,24 @@ export async function POST(request: Request) {
   const burst = await enforceBurstLimit(request, authenticatedUserId);
   if (!burst.allowed) {
     return noStoreJson(
-      { error: "Too many analyses at once. Wait a moment and try again." },
+      { error: burst.limit === "guard-unavailable"
+        ? "Analysis is temporarily unavailable. Please try again later."
+        : burst.limit === "burst"
+          ? "Too many analyses at once. Wait a moment and try again."
+          : "The daily report allowance is exhausted. Please return after midnight UTC." },
       {
-        status: 429,
+        status: burst.limit === "guard-unavailable" ? 503 : 429,
         headers: { "Retry-After": String(burst.retryAfterSeconds ?? 60) },
       },
     );
   }
 
-  if (!apiKey) {
+  if (!apiKey || !paidGenerationEnabled()) {
     const payload = await withSharePath({
       result: createDemoValidation(decision, style, persona.id),
       source: "demo",
       model,
+      notice: !paidGenerationEnabled() ? "Live AI generation is paused. Showing demo data." : undefined,
     }, authenticatedUserId);
     return noStoreJson(payload);
   }

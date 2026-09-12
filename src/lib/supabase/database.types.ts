@@ -67,7 +67,18 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      reserve_generation_quota: {
+        Args: {
+          p_kind: string;
+          p_client_hash: string;
+          p_client_limit: number;
+          p_global_limit: number;
+          p_burst_limit: number;
+        };
+        Returns: { allowed: boolean; reason: string; retry_after_seconds: number }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

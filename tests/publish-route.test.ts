@@ -47,11 +47,18 @@ function publish(origin: string | null = "https://example.com") {
 }
 
 beforeEach(() => {
+  vi.unstubAllEnvs();
   state.user = "creator";
   state.token = "a".repeat(64);
   state.row = { owner_id: null, creator_token_hash: creatorTokenHash(state.token), visibility: "unlisted" };
   state.writes = 0;
   state.race = false;
+});
+
+test("publishing switch blocks even the creator without writes", async () => {
+  vi.stubEnv("PUBLISHING_ENABLED", "false");
+  expect((await publish()).status).toBe(503);
+  expect(state.writes).toBe(0);
 });
 
 test("anonymous creator can publish after login and capability is consumed", async () => {

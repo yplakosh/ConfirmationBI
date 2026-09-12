@@ -4,12 +4,16 @@ import { creatorCookieName, creatorCookiePath, creatorTokenHash, canPublishRepor
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/auth-server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { publishingEnabled } from "@/lib/generation-controls";
 
 interface PublishRouteContext {
   params: Promise<{ shareId: string }>;
 }
 
 export async function POST(request: Request, context: PublishRouteContext) {
+  if (!publishingEnabled()) {
+    return Response.json({ error: "Public publishing is temporarily paused." }, { status: 503 });
+  }
   if (!isSameOrigin(request)) {
     return Response.json({ error: "Invalid request origin." }, { status: 403 });
   }
