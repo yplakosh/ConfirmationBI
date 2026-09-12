@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { cookies } from "next/headers";
+import { creatorCookieName, creatorCookiePath, creatorTokenHash, canPublishReport } from "@/lib/report-ownership";
 
 import { createSupabaseAuthServerClient } from "@/lib/supabase/auth-server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
@@ -31,15 +33,17 @@ export async function POST(request: Request, context: PublishRouteContext) {
 
   const existing = await admin
     .from("validations")
-    .select("owner_id, visibility")
+    .select("owner_id, creator_token_hash, visibility")
     .eq("share_id", shareId)
     .maybeSingle();
   if (existing.error || !existing.data) {
     return Response.json({ error: "Validation not found." }, { status: 404 });
   }
-  if (existing.data.owner_id && existing.data.owner_id !== authData.user.id) {
+  const cookieStore = await cookies();
+  const tokenHash = creatorTokenHash(cookieStore.get(creatorCookieName(shareId))?.value);
+  if (!canPublishReport(existing.data, authData.user.id, tokenHash)) {
     return Response.json(
-      { error: "This validation belongs to another account." },
+      { error: "Only the creator can publish this report. For an anonymous report, use the browser where it was generated." },
       { status: 403 },
     );
   }
@@ -47,15 +51,22 @@ export async function POST(request: Request, context: PublishRouteContext) {
     return Response.json({ visibility: "public" });
   }
 
-  const update = await admin
+  let query = admin
     .from("validations")
     .update({
       owner_id: authData.user.id,
+      creator_token_hash: null,
       visibility: "public",
       published_at: new Date().toISOString(),
     })
-    .eq("share_id", shareId)
-    .or(`owner_id.is.null,owner_id.eq.${authData.user.id}`)
+    .eq("share_id", shareId);
+
+  // Repeat the ownership condition in the write to prevent concurrent claims.
+  query = existing.data.owner_id
+    ? query.eq("owner_id", authData.user.id)
+    : query.is("owner_id", null).eq("creator_token_hash", tokenHash!);
+
+  const update = await query
     .select("visibility")
     .maybeSingle();
 
@@ -66,10 +77,17 @@ export async function POST(request: Request, context: PublishRouteContext) {
     );
   }
 
+  cookieStore.set(creatorCookieName(shareId), "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: creatorCookiePath(shareId),
+    maxAge: 0,
+  });
   return Response.json({ visibility: "public" });
 }
 
 function isSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  return !origin || origin === new URL(request.url).origin;
+  return origin === new URL(request.url).origin;
 }

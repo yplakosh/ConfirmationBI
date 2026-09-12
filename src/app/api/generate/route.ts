@@ -121,7 +121,7 @@ export async function POST(request: Request) {
       result: createDemoValidation(decision, style, persona.id),
       source: "demo",
       model,
-    });
+    }, authenticatedUserId);
     return noStoreJson(payload);
   }
 
@@ -133,7 +133,7 @@ export async function POST(request: Request) {
     persona.id,
   );
   if (cached) {
-    const sharedCached = await withSharePath(cached);
+    const sharedCached = await withSharePath(cached, authenticatedUserId);
     if (sharedCached.sharePath !== cached.sharePath) {
       await cacheGeneration(
         burst.context,
@@ -157,12 +157,11 @@ export async function POST(request: Request) {
         budget.limit === "client-daily"
           ? "Your live-analysis allowance resets at midnight UTC. Showing demo data for now."
           : "The live-analysis budget is resting. Showing demo data for now.",
-    });
+    }, authenticatedUserId);
     return noStoreJson(payload);
   }
 
   try {
-    const validationId = createValidationId();
     const client = new OpenAI({
       apiKey,
       maxRetries: 0,
@@ -205,7 +204,6 @@ export async function POST(request: Request) {
     const payload = await withSharePath(
       {
         result: {
-          id: validationId,
           decision,
           style,
           persona: persona.id,
@@ -215,6 +213,7 @@ export async function POST(request: Request) {
         source: "openai",
         model,
       },
+      authenticatedUserId,
       {
         inputTokens: response.usage?.input_tokens,
         outputTokens: response.usage?.output_tokens,
@@ -254,12 +253,10 @@ async function getAuthenticatedUserId() {
     const supabase = await createSupabaseAuthServerClient();
     if (!supabase) return undefined;
 
-    const { data, error } = await supabase.auth.getClaims();
+    const { data, error } = await supabase.auth.getUser();
     if (error) return undefined;
 
-    return typeof data?.claims?.sub === "string"
-      ? data.claims.sub
-      : undefined;
+    return data.user?.id;
   } catch (error) {
     console.warn("Generation auth lookup failed; using anonymous limits", error);
     return undefined;
@@ -268,7 +265,7 @@ async function getAuthenticatedUserId() {
 
 function createValidationId() {
   const date = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-  return `VR-${date}-${randomUUID().slice(0, 8).toUpperCase()}`;
+  return `VR-${date}-${randomUUID().toUpperCase()}`;
 }
 
 function noStoreJson(body: unknown, init: ResponseInit = {}) {
@@ -291,13 +288,21 @@ function clip(value: string, maximumLength: number) {
 }
 
 async function withSharePath(
-  value: GenerateValidationResponse,
+  value: Omit<GenerateValidationResponse, "result"> & {
+    result: Omit<GenerateValidationResponse["result"], "id"> & { id?: string };
+  },
+  userId: string | undefined,
   usage?: { inputTokens?: number | null; outputTokens?: number | null },
 ) {
-  const response = GenerateValidationResponseSchema.parse(value);
+  // Cached content may be reused, but each generation owns a separate report.
+  const response = GenerateValidationResponseSchema.parse({
+    ...value,
+    sharePath: undefined,
+    result: { ...value.result, id: createValidationId() },
+  });
 
   try {
-    const shareId = await persistValidation(response, usage);
+    const shareId = await persistValidation(response, userId, usage);
     return shareId ? { ...response, sharePath: `/v/${shareId}` } : response;
   } catch (error) {
     console.error("Validation persistence was unavailable", error);

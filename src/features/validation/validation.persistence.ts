@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { cache } from "react";
 import { z } from "zod";
 
@@ -11,6 +11,7 @@ import {
 import type { GenerateValidationResponse } from "./validation.types";
 import type { Json } from "@/lib/supabase/database.types";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { prepareReportCreator } from "@/lib/report-creator";
 
 const PROMPT_VERSION = "v2";
 
@@ -34,30 +35,20 @@ function hashInput(response: GenerateValidationResponse) {
 
 export async function persistValidation(
   response: GenerateValidationResponse,
+  userId: string | undefined,
   usage: TokenUsage = {},
 ) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return null;
 
-  const existing = await supabase
-    .from("validations")
-    .select("share_id")
-    .eq("report_id", response.result.id)
-    .maybeSingle();
-
-  if (existing.error) {
-    console.error("Validation persistence lookup failed", {
-      code: existing.error.code,
-      message: existing.error.message,
-    });
-    return null;
-  }
-
-  if (existing.data) return existing.data.share_id;
+  const shareId = randomUUID();
+  const creator = prepareReportCreator(shareId, userId);
 
   const { data, error } = await supabase
     .from("validations")
     .insert({
+      ...creator.fields,
+      share_id: shareId,
       report_id: response.result.id,
       decision: response.result.decision,
       style: response.result.style,
@@ -74,15 +65,6 @@ export async function persistValidation(
     .single();
 
   if (error) {
-    if (error.code === "23505") {
-      const concurrent = await supabase
-        .from("validations")
-        .select("share_id")
-        .eq("report_id", response.result.id)
-        .maybeSingle();
-      if (concurrent.data) return concurrent.data.share_id;
-    }
-
     console.error("Validation persistence failed", {
       code: error.code,
       message: error.message,
@@ -90,6 +72,7 @@ export async function persistValidation(
     return null;
   }
 
+  await creator.issueCookie();
   return data.share_id;
 }
 

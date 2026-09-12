@@ -11,6 +11,7 @@ export interface Database {
     Tables: {
       validations: {
         Row: {
+          creator_token_hash: string | null;
           created_at: string;
           decision: string;
           id: string;
@@ -29,6 +30,7 @@ export interface Database {
           visibility: string;
         };
         Insert: {
+          creator_token_hash?: string | null;
           created_at?: string;
           decision: string;
           id?: string;
@@ -47,6 +49,7 @@ export interface Database {
           visibility?: string;
         };
         Update: {
+          creator_token_hash?: string | null;
           decision?: string;
           input_hash?: string;
           input_tokens?: number | null;

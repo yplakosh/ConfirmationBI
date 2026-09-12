@@ -79,6 +79,8 @@ export function PublishValidation({
       setError(
         response.status === 401
           ? "Your sign-in expired. Close this dialog and try again."
+          : response.status === 403
+            ? "Only the creator can publish this report. If you generated it before signing in, use the same browser. Older reports may need to be generated again."
           : "The validation could not be published. Try again.",
       );
       setStep(response.status === 401 ? "sign-in" : "confirm");
