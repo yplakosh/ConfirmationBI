@@ -109,3 +109,7 @@ Application code lives under `src/`:
 ## Status
 
 The responsive generator, structured generation route, results dashboard, MVP safeguards, Supabase persistence, unlisted sharing, magic-link authentication, explicit public publishing, and the Hall of Validation are implemented. Voting remains deferred.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
