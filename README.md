@@ -2,40 +2,37 @@
 
 **Data-driven validation for decisions you already made.**
 
-ConfirmationBI is a satirical AI analytics product that creates a polished executive dashboard to validate a conclusion you have already chosen. Enter a decision, select the desired outcome, and receive a persuasive set of fictional KPIs, a trend chart, and an executive summary that proves the data agrees with you.
+ConfirmationBI is a satirical analytics app that turns a conclusion you’ve already chosen into a convincing dashboard of fictional KPIs, charts, and executive commentary. It’s a playful look at analytics used to justify an answer rather than discover one.
 
-## The idea
+[Try the demo](https://confirmation-bi.vercel.app/) · [Explore the Hall of Validation](https://confirmation-bi.vercel.app/hall)
 
-Most people have encountered analytics used to justify a preferred answer rather than discover the truth. ConfirmationBI makes that impulse visible—and funny—by turning it into a deliberately overconfident business-intelligence experience.
+![Example report with fictional growth metrics, a 99.4% confidence score, and an upward validation chart](docs/images/validation-report.png)
 
-## Initial experience
+*An existing public report. All metrics are fictional; this is entertainment, not decision support.*
+
+## How it works
 
 1. Enter a decision, such as “We should pivot to enterprise.”
 2. Choose a validation style: strongly validate, cautiously validate, or blame external factors.
 3. Generate a dashboard featuring invented metrics like Narrative–Market Fit and Stakeholder Confidence Velocity.
 4. Receive an executive summary and confidence score, ready to share with the board—or the group chat.
 
-## Planned MVP
+## Implemented experience
 
 - A single-page validation generator
 - Structured AI-generated dashboard data, rendered locally
-- Unlisted, shareable validation pages and a public Hall of Validation
-- Authentication required only to publish or vote
-- Deliberate public publishing; results are never public by default
-- Sensible generation limits, caching, and a daily budget ceiling
+- Unlisted, shareable validation pages
+- Magic-link authentication and creator-only publishing
+- Explicit opt-in listing in the public Hall of Validation
+- Atomic generation quotas, result caching, and live AI disabled by default
+
+The hosted demo uses sample data without calling OpenAI. Live AI generation is an optional, operator-funded mode.
 
 ## Principles
 
 - The satire should be obvious; the safeguards should be real.
 - Do not present generated content as genuine medical, legal, financial, or professional advice.
-- Keep private decisions private unless the creator explicitly chooses to publish them.
-
-## Product design
-
-- [Version 1 UI canvas](docs/design/confirmationbi-ui-v1.html) — visual source of truth for the core desktop and mobile flow
-- [Version 1 design addendum](docs/design/confirmationbi-ui-v1-addendum.html) — final publish confirmation and mobile gallery
-- [Implementation notes](docs/design/implementation-notes.md) — required privacy, sharing, publishing, accessibility, and interaction behavior
-- [Wireframe brief](docs/wireframe-brief.md) — original product and UX direction
+- Be explicit about visibility: unlisted reports are readable by anyone with their link. Do not enter confidential or personal information.
 
 ## Technology
 
@@ -45,15 +42,15 @@ Most people have encountered analytics used to justify a preferred answer rather
 - Supabase Postgres for report persistence and magic-link authentication
 - Vercel deployment
 
-The generation route uses the OpenAI Responses API with a strict Zod-backed structured-output schema. The default model is `gpt-5.6-luna`, selected for this short, cost-sensitive generation task. Without an API key, the application returns deterministic demo data through the same response contract.
+Eight randomized personas vary the report’s voice while preserving a shared, Zod-validated response contract. Demo and live generation use the same rendering path.
 
-Each generation randomly selects one of eight report personas, such as Deadpan
-Auditor, Sports Desk Analyst, Cosmic Quant, or Caffeinated Founder. The persona
-changes the summary voice and KPI vocabulary without changing the validation
-strength or structured response schema. Persona-aware cache keys preserve up to
-eight variants for the same decision, and older reports remain compatible.
+## Engineering decisions and limitations
 
-Generation uses atomic Postgres quota reservations shared across instances and regions. Defaults allow 6 requests per minute per client, with daily report allowances of 20 anonymous / 50 authenticated / 500 app-wide. Cached and demo results count too. Paid-call allowances are separately capped at 5 / 20 / 100 per UTC day. Authenticated identities come from verified Supabase sessions; anonymous visitors are grouped by hashed IP. Runtime Cache is used only for reusable results, never authoritative counters. Missing or unavailable quota storage fails closed. See [generation safeguards](docs/generation-safeguards.md) for rollout order, emergency switches, limits, and remaining tradeoffs.
+- **Server-owned trust boundaries:** AI responses are schema-validated before rendering. API keys and privileged database access stay on the server.
+- **Viewing is not ownership:** a share URL permits reading, not publishing. Publication requires a verified account and creator authority. See [report ownership](docs/report-ownership.md).
+- **Durable quotas, optional cache:** Postgres serializes quota reservations across instances; the cache only reuses content. Each generated report receives independent ownership and a fresh URL. Missing quota storage fails closed, including in demo mode.
+- **Deliberately bounded scope:** the shared quota lock favors simplicity at demo-scale traffic. Attempt limits are not dollar budgets; daily quotas do not cap lifetime storage. See [generation safeguards](docs/generation-safeguards.md) for limits and operational controls.
+- **Deferred work:** voting, automated report retention, content moderation, and stronger bot protection are not implemented. This is not a service for sensitive data or high-stakes advice.
 
 ## Local development
 
@@ -65,39 +62,49 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The current scaffold does not require configured environment variables.
+Open [http://localhost:3000](http://localhost:3000). The interface can render without credentials, but generation requires the Supabase setup below.
 
-To enable live AI generation, add an OpenAI API key to `.env.local`:
+Live AI is optional and costs the operator money. To opt in, configure:
 
 ```text
 OPENAI_API_KEY=your_key_here
 OPENAI_MODEL=gpt-5.6-luna
-GENERATION_IP_HASH_SALT=replace_with_a_long_random_value
+GENERATION_PAID_ENABLED=true
 ```
 
 Restart `npm run dev` after changing environment variables. Keep `OPENAI_API_KEY` server-only and never prefix it with `NEXT_PUBLIC_`.
 
-To persist results and create unlisted share links, add the Supabase project URL
+To enforce quotas, persist results, and create unlisted share links, add the Supabase project URL
 and API keys from **Supabase → Settings → API Keys**:
 
 ```text
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_browser_safe_key
 SUPABASE_SECRET_KEY=sb_secret_your_server_only_key
+GENERATION_IP_HASH_SALT=replace_with_a_long_random_value
 ```
 
-The publishable key is used only to initiate magic-link sign-in. The secret key
+The publishable key supports browser authentication. The secret key
 bypasses RLS and must never use a `NEXT_PUBLIC_` prefix. In Supabase Auth URL
 Configuration, add `http://localhost:3000/auth/callback` and the production
-`https://your-domain/auth/callback` URL to the redirect allowlist. The database
-schema is versioned under `supabase/migrations/`; unlisted reports are read only
-by server-side code and are marked `noindex`.
+`https://your-domain/auth/callback` URL to the redirect allowlist, plus
+`https://your-domain/auth/callback?next=**` for return navigation. Set the Site URL
+to your deployed origin. Use your own domain, not the hosted demo's domain.
 
-Run the complete local verification suite with:
+Apply all SQL files under `supabase/migrations/` in filename order to your own
+Supabase project before generating reports. Keep `GENERATION_PAID_ENABLED=false`
+for a no-AI-cost setup. Unlisted reports are read through server-side code and
+marked `noindex`; neither property makes the link private. Never commit `.env.local`.
+
+Run lint, type checking, unit tests, and a production build with:
 
 ```bash
 npm run check
 ```
+
+Run the additional real-Postgres quota concurrency and privilege tests with
+`npm run test:db`. These require Docker and create an isolated `postgres:17`
+container; they do not connect to your Supabase project.
 
 Application code lives under `src/`:
 
@@ -106,9 +113,12 @@ Application code lives under `src/`:
 - `features/validation/` — validation-specific components, contracts, and constants
 - `lib/` — external service clients and cross-cutting utilities
 
-## Status
+## Product design
 
-The responsive generator, structured generation route, results dashboard, MVP safeguards, Supabase persistence, unlisted sharing, magic-link authentication, explicit public publishing, and the Hall of Validation are implemented. Voting remains deferred.
+- [Version 1 UI canvas](docs/design/confirmationbi-ui-v1.html) — original desktop and mobile design
+- [Version 1 design addendum](docs/design/confirmationbi-ui-v1-addendum.html) — final publish confirmation and mobile gallery
+- [Implementation notes](docs/design/implementation-notes.md) — required privacy, sharing, publishing, accessibility, and interaction behavior
+- [Wireframe brief](docs/wireframe-brief.md) — original product and UX direction
 
 ## License
 
